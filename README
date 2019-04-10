@@ -1,9 +1,8 @@
 To run this basic example:
+
 ```
 g++ -o server server.cpp
 g++ -o client client.cpp
 ./server
 ./client 127.0.0.1
 ```
-The client execution should return the timestamp.
-The original example is on https://gist.github.com/browny/5211329

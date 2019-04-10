@@ -3,5 +3,8 @@
 cmake-build-debug*
 CMakeLists.txt
 
+#VS Code files
+.vscode
+
 # C projects
 bin*
