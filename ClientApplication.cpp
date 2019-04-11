@@ -14,6 +14,6 @@ int main(int argc, char *argv[])
     string answer = clientSocket.readFromServer();
     printf("%s\n", answer.c_str());
     
-	  clientSocket.closeSocket();
+	clientSocket.closeSocket();
     return 0;
 }
