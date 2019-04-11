@@ -3,8 +3,13 @@
 cmake-build-debug*
 CMakeLists.txt
 
-#VS Code files
+# VS Code files
 .vscode
 
 # C projects
 bin*
+*.o
+
+# Generated files
+client 
+server
