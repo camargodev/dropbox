@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h> 
+#include "Connection.hpp"
 
 using namespace std;
 
@@ -15,19 +17,28 @@ using SocketDescriptor = int;
 class SocketWrapper {
 
     public:    
-        SocketWrapper(int port);
+        const static int DEFAULT_PORT = 4000;
+        const static int MESSAGE_SIZE = 256;
+
+        SocketWrapper();
         void setNumberOfClients(int numOfClients);
+        Connection acceptConnection(); 
+        string readFromServer();
+        string readFromClient(Connection connection);
+        void writeToServer(string message);
+        void writeToClient(Connection connection, string message);
+        void closeConnection(Connection connection);
+        void configureAsServer(int port);
+        void configureAsClient(string hostname, int port);
         SocketDescriptor getSocketDescriptor();
-        SocketDescriptor acceptConnection(); 
-        string readFromConnection(SocketDescriptor connection);
-        void writeToConnection(SocketDescriptor connection, string message);
-        void closeConnection(SocketDescriptor connection);
+        void closeSocket();
 
     private:
-        const int MESSAGE_SIZE = 256;
         SocketDescriptor socketDescriptor;
 
+        sockaddr_in buildAddress(in_addr hostname, int port);
         sockaddr_in buildAddress(int port);
+        sockaddr_in buildDefaultAddress(int port);
 
 
 };
