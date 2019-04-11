@@ -1,4 +1,4 @@
-#include "ServerSocketWrapper.hpp"
+#include "../include/ServerSocketWrapper.hpp"
 
 ServerSocketWrapper :: ServerSocketWrapper(int port) {
     this->socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);

@@ -1,6 +1,17 @@
-all:
-	g++ -c SocketWrapper.cpp
-	g++ -c ClientSocketWrapper.cpp 
-	g++ -c ServerSocketWrapper.cpp 
-	g++ -o server server.cpp ServerSocketWrapper.o SocketWrapper.o
-	g++ -o client client.cpp ClientSocketWrapper.o SocketWrapper.o
+CC = g++
+
+SRC = src
+
+all: wrappers
+	${CC} -o server ServerApplication.cpp ServerSocketWrapper.o SocketWrapper.o
+	${CC} -o client ClientApplication.cpp ClientSocketWrapper.o SocketWrapper.o
+
+wrappers:
+	${CC} -c ${SRC}/SocketWrapper.cpp
+	${CC} -c ${SRC}/ClientSocketWrapper.cpp 
+	${CC} -c ${SRC}/ServerSocketWrapper.cpp 
+
+clean:
+	rm *.o
+	rm client
+	rm server

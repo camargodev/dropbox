@@ -1,4 +1,4 @@
-#include "SocketWrapper.hpp"
+#include "../include/SocketWrapper.hpp"
 
 SocketDescriptor SocketWrapper :: getSocketDescriptor() {
     return this->socketDescriptor;
