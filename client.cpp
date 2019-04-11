@@ -1,10 +1,9 @@
 #include <stdio.h>
-#include "SocketWrapper.hpp"
+#include "ClientSocketWrapper.hpp"
 
 int main(int argc, char *argv[])
 {
-    SocketWrapper clientSocket;
-	  clientSocket.configureAsClient(argv[1], SocketWrapper::DEFAULT_PORT);
+    ClientSocketWrapper clientSocket(argv[1], SocketWrapper::DEFAULT_PORT);
     
     printf("Enter the message: ");
     char input[256] = "";
