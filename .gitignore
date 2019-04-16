@@ -13,3 +13,4 @@ bin*
 # Generated files
 client 
 server
+\.DS_Store
