@@ -3,8 +3,13 @@
 ClientSocketWrapper :: ClientSocketWrapper(string serverHostname, int serverPort) {
     this->socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
     hostent* host = gethostbyname(serverHostname.c_str());
-    struct sockaddr_in serverAddress = this->buildAddress(*((struct in_addr *)host->h_addr), serverPort);
-    connect(this->socketDescriptor,(struct sockaddr *) &serverAddress, sizeof(serverAddress));
+    if (host != NULL) {
+      struct sockaddr_in serverAddress = this->buildAddress(*((struct in_addr *)host->h_addr), serverPort);
+      connect(this->socketDescriptor,(struct sockaddr *) &serverAddress, sizeof(serverAddress));
+      foundHostName = true;
+    } else {
+      printf("incorrect host name\n");
+    }
 }
 
 
@@ -21,7 +26,3 @@ string ClientSocketWrapper :: readFromServer() {
 void ClientSocketWrapper :: writeToServer(string message) {
     return writeToConnection(this->socketDescriptor, message);
 }
-
-
-
-

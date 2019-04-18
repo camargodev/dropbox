@@ -11,6 +11,7 @@ class ClientSocketWrapper : public SocketWrapper {
         ClientSocketWrapper(string serverHostname, int serverPort);
         string readFromServer();
         void writeToServer(string message);
+        bool foundHostName = false;
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);
