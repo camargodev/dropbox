@@ -3,6 +3,11 @@
 
 int main(int argc, char *argv[])
 {
+    if (argc < 2) {
+        printf("no host name");
+        return -1;
+    }
+
     ClientSocketWrapper clientSocket(argv[1], SocketWrapper::DEFAULT_PORT);
     
     printf("Enter the message: ");
