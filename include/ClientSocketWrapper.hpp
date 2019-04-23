@@ -9,8 +9,8 @@ class ClientSocketWrapper : public SocketWrapper {
 
     public: 
         ClientSocketWrapper(string serverHostname, int serverPort);
-        Packet* readFromServer();
-        void writeToServer(Packet* packet);
+        Packet* receivePacketFromServer();
+        void sendPacketToServer(Packet* packet);
         bool foundHostName = false;
 
     private:

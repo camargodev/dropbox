@@ -18,9 +18,9 @@ int main(int argc, char *argv[])
 
 		Packet packet;
 		strcpy(packet.payload, input);
-        clientSocket.writeToServer(&packet);
+        clientSocket.sendPacketToServer(&packet);
 
-        Packet* answer = clientSocket.readFromServer();
+        Packet* answer = clientSocket.receivePacketFromServer();
         printf("%s\n", answer->payload);
 
         clientSocket.closeSocket();

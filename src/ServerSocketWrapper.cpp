@@ -12,12 +12,12 @@ sockaddr_in ServerSocketWrapper :: buildAddress(int port) {
     return address;
 }
 
-Packet* ServerSocketWrapper :: readFromClient(SocketDescriptor clientConnectionDescriptor) {
-    return readFromConnection(clientConnectionDescriptor);
+Packet* ServerSocketWrapper :: receivePacketFromClient(SocketDescriptor clientConnectionDescriptor) {
+    return receivePacket(clientConnectionDescriptor);
 }
 
-void ServerSocketWrapper :: writeToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet) {
-    return writeToConnection(clientConnectionDescriptor, packet);
+void ServerSocketWrapper :: sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet) {
+    return sendPacket(clientConnectionDescriptor, packet);
 }
 
 Connection ServerSocketWrapper :: acceptClientConnection() {

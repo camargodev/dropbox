@@ -29,8 +29,8 @@ class SocketWrapper {
         SocketDescriptor socketDescriptor;
 
         sockaddr_in buildDefaultAddress(int port);
-        Packet* readFromConnection(SocketDescriptor connectionDescriptor);
-        void writeToConnection(SocketDescriptor connectionDescriptor, Packet* packet);
+        Packet* receivePacket(SocketDescriptor connectionDescriptor);
+        void sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
 
 
 };

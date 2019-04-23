@@ -12,13 +12,13 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
     return address;
 }
 
-Packet* SocketWrapper :: readFromConnection(int connectionDescriptor) {
+Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
 	char* buffer = new char[sizeof(Packet)];
     read(connectionDescriptor, buffer, sizeof(Packet));
     return (Packet *) buffer;
 }
 
-void SocketWrapper :: writeToConnection(SocketDescriptor connectionDescriptor, Packet* packet) {
+void SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* packet) {
      write(connectionDescriptor, (void *) packet, sizeof(Packet));
 }
 
