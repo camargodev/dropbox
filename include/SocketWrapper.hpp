@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include "Connection.hpp"
+#include "Packet.hpp"
 
 using namespace std;
 
@@ -18,7 +19,6 @@ class SocketWrapper {
 
     public:    
         const static int DEFAULT_PORT = 4000;
-        const static int MESSAGE_SIZE = 256;
         
         void closeConnection(Connection connection);
     
@@ -29,8 +29,8 @@ class SocketWrapper {
         SocketDescriptor socketDescriptor;
 
         sockaddr_in buildDefaultAddress(int port);
-        string readFromConnection(SocketDescriptor connectionDescriptor);
-        void writeToConnection(SocketDescriptor connectionDescriptor, string message);
+        Packet* readFromConnection(SocketDescriptor connectionDescriptor);
+        void writeToConnection(SocketDescriptor connectionDescriptor, Packet* packet);
 
 
 };

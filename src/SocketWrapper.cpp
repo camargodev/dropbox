@@ -12,14 +12,14 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
     return address;
 }
 
-string SocketWrapper :: readFromConnection(SocketDescriptor connectionDescriptor) {
-	char buffer[MESSAGE_SIZE] = "";
-    read(connectionDescriptor, buffer, MESSAGE_SIZE);
-    return string(buffer);
+Packet* SocketWrapper :: readFromConnection(int connectionDescriptor) {
+	char* buffer = new char[sizeof(Packet)];
+    read(connectionDescriptor, buffer, sizeof(Packet));
+    return (Packet *) buffer;
 }
 
-void SocketWrapper :: writeToConnection(SocketDescriptor connectionDescriptor, string message) {
-     write(connectionDescriptor, message.c_str(), message.size());
+void SocketWrapper :: writeToConnection(SocketDescriptor connectionDescriptor, Packet* packet) {
+     write(connectionDescriptor, (void *) packet, sizeof(Packet));
 }
 
 void SocketWrapper :: closeConnection(Connection connection) {

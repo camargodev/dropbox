@@ -9,8 +9,9 @@ class ClientSocketWrapper : public SocketWrapper {
 
     public: 
         ClientSocketWrapper(string serverHostname, int serverPort);
-        string readFromServer();
-        void writeToServer(string message);
+        Packet* readFromServer();
+        void writeToServer(Packet* packet);
+        bool foundHostName = false;
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);

@@ -10,10 +10,12 @@ int main(int argc, char *argv[])
 		// keeps blocked here until a send ('write' in TCP) is performed at the client
 		Connection connection = serverSocket.acceptClientConnection();
 
-		string message = serverSocket.readFromClient(connection.descriptor);	
-		printf("\nThe client sent %s", message.c_str());
+		Packet* packet = serverSocket.readFromClient(connection.descriptor);	
+		printf("\nThe client sent %s", packet->payload);
 		
-		serverSocket.writeToClient(connection.descriptor, "\nThe server answered 'bye'");
+		Packet answer;
+		strcpy(answer.payload, "\nThe server answered 'bye'");
+		serverSocket.writeToClient(connection.descriptor, &answer);
 		serverSocket.closeConnection(connection);
 	}
 

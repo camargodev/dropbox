@@ -9,8 +9,8 @@ class ServerSocketWrapper : public SocketWrapper {
 
     public: 
         ServerSocketWrapper(int port);
-        string readFromClient(SocketDescriptor clientConnectionDescriptor);
-        void writeToClient(SocketDescriptor clientConnectionDescriptor, string message);
+        Packet* readFromClient(SocketDescriptor clientConnectionDescriptor);
+        void writeToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet);
         void setNumberOfClients(int numOfClients);
         Connection acceptClientConnection(); 
 
