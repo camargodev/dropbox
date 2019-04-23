@@ -1,10 +1,11 @@
 CC = g++
 
 SRC = src
+APP = application
 
 all: wrappers
-	${CC} -o server ServerApplication.cpp ServerSocketWrapper.o SocketWrapper.o
-	${CC} -o client ClientApplication.cpp ClientSocketWrapper.o SocketWrapper.o
+	${CC} -o server ${APP}/ServerApplication.cpp ServerSocketWrapper.o SocketWrapper.o
+	${CC} -o client ${APP}/ClientApplication.cpp ClientSocketWrapper.o SocketWrapper.o
 
 wrappers:
 	${CC} -c ${SRC}/SocketWrapper.cpp
