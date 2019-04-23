@@ -12,13 +12,16 @@ int main(int argc, char *argv[])
 
     if (clientSocket.foundHostName == true) {
         printf("Enter the message: ");
-        char input[256] = "";
-        fgets(input, 256, stdin);
+        char input[PAYLOAD_SIZE] = "";
+        fgets(input, PAYLOAD_SIZE, stdin);
 
-        clientSocket.writeToServer(string(input));
 
-        string answer = clientSocket.readFromServer();
-        printf("%s\n", answer.c_str());
+		Packet packet;
+		strcpy(packet.payload, input);
+        clientSocket.writeToServer(&packet);
+
+        Packet* answer = clientSocket.readFromServer();
+        printf("%s\n", answer->payload);
 
         clientSocket.closeSocket();
     } else {

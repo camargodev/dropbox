@@ -19,10 +19,10 @@ sockaddr_in ClientSocketWrapper :: buildAddress(in_addr hostname, int port) {
     return address;
 }
 
-string ClientSocketWrapper :: readFromServer() {
+Packet* ClientSocketWrapper :: readFromServer() {
     return readFromConnection(this->socketDescriptor);
 }
 
-void ClientSocketWrapper :: writeToServer(string message) {
-    return writeToConnection(this->socketDescriptor, message);
+void ClientSocketWrapper :: writeToServer(Packet* packet) {
+    return writeToConnection(this->socketDescriptor, packet);
 }
