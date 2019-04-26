@@ -30,7 +30,7 @@ class SocketWrapper {
 
         sockaddr_in buildDefaultAddress(int port);
         Packet* receivePacket(SocketDescriptor connectionDescriptor);
-        void sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
+        bool sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
 
 
 };

@@ -4,10 +4,14 @@
 int main(int argc, char *argv[])
 {
 	ServerSocketWrapper serverSocket(SocketWrapper::DEFAULT_PORT);
+	if (!serverSocket.openSocket()) {
+		printf("\nCould not open socket");
+		return -1;
+	}
 	serverSocket.setNumberOfClients(5);
 	
 	while (true) {
-		// keeps blocked here until a send ('write' in TCP) is performed at the client
+		
 		Connection connection = serverSocket.acceptClientConnection();
 
 		Packet* packet = serverSocket.receivePacketFromClient(connection.descriptor);	

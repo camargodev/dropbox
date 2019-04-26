@@ -1,15 +1,18 @@
 #include "../include/ClientSocketWrapper.hpp"
+#include "math.h"
 
-ClientSocketWrapper :: ClientSocketWrapper(string serverHostname, int serverPort) {
+bool ClientSocketWrapper :: setServer(string hostname, int port) {
     this->socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
-    hostent* host = gethostbyname(serverHostname.c_str());
+    hostent* host = gethostbyname(hostname.c_str());
     if (host != NULL) {
-      struct sockaddr_in serverAddress = this->buildAddress(*((struct in_addr *)host->h_addr), serverPort);
-      connect(this->socketDescriptor,(struct sockaddr *) &serverAddress, sizeof(serverAddress));
-      foundHostName = true;
-    } else {
-      printf("incorrect host name\n");
+        this->serverAddress = this->buildAddress(*((struct in_addr *)host->h_addr), port);
+        return true;
     }
+    return false;
+}
+
+bool ClientSocketWrapper :: connectToServer() {
+    return connect(this->socketDescriptor,(struct sockaddr *) &this->serverAddress, sizeof(this->serverAddress)) >= 0;
 }
 
 
@@ -23,6 +26,6 @@ Packet* ClientSocketWrapper :: receivePacketFromServer() {
     return receivePacket(this->socketDescriptor);
 }
 
-void ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
+bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
     return sendPacket(this->socketDescriptor, packet);
 }
