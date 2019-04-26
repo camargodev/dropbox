@@ -10,10 +10,14 @@
 #include <netdb.h> 
 #include "Connection.hpp"
 #include "Packet.hpp"
+#include <fstream>
+
 
 using namespace std;
 
 using SocketDescriptor = int;
+
+using File = FILE;
 
 class SocketWrapper {
 
@@ -30,7 +34,7 @@ class SocketWrapper {
 
         sockaddr_in buildDefaultAddress(int port);
         Packet* receivePacket(SocketDescriptor connectionDescriptor);
-        void sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
+        bool sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
 
 
 };

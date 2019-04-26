@@ -9,13 +9,16 @@ class ServerSocketWrapper : public SocketWrapper {
 
     public: 
         ServerSocketWrapper(int port);
+        bool openSocket();
         Packet* receivePacketFromClient(SocketDescriptor clientConnectionDescriptor);
-        void sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet);
+        bool sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet);
         void setNumberOfClients(int numOfClients);
         Connection acceptClientConnection(); 
+        void sendFileToClient(SocketDescriptor clientConnectionDescriptor, File* file);
 
     private:
         sockaddr_in buildAddress(int port);
+        int port;
 
 };
 

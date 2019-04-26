@@ -14,12 +14,16 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
 
 Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
 	char* buffer = new char[sizeof(Packet)];
-    read(connectionDescriptor, buffer, sizeof(Packet));
+    strcpy(buffer, "");
+    int readBytes = recv(connectionDescriptor, buffer, sizeof(Packet), 0);
     return (Packet *) buffer;
 }
 
-void SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* packet) {
-     write(connectionDescriptor, (void *) packet, sizeof(Packet));
+bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* packet) {
+    int response = send(connectionDescriptor, (void *) packet, sizeof(Packet), 0);
+    if (response < 0)
+        printf("\nError on send is %i", response);
+    return response  >= 0;
 }
 
 void SocketWrapper :: closeConnection(Connection connection) {

@@ -4,19 +4,43 @@
 int main(int argc, char *argv[])
 {
 	ServerSocketWrapper serverSocket(SocketWrapper::DEFAULT_PORT);
+	if (!serverSocket.openSocket()) {
+		printf("\nCould not open socket");
+		return -1;
+	}
 	serverSocket.setNumberOfClients(5);
 	
 	while (true) {
-		// keeps blocked here until a send ('write' in TCP) is performed at the client
-		Connection connection = serverSocket.acceptClientConnection();
 
-		Packet* packet = serverSocket.receivePacketFromClient(connection.descriptor);	
-		printf("\nThe client sent %s", packet->payload);
+		printf("\nWaiting for client to connect");
+		Connection clientConnection = serverSocket.acceptClientConnection();
+
+		bool receivedFullFile = false;
+		string fullPayload = "";
+
+		// Recebe pacotes até completar o arquivo
+		// No futuro, isso pode ser isolado em uma função
+		Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
+		while (!receivedFullFile) {
+			packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);	
+			fullPayload += string(packet->payload);
+			receivedFullFile = (packet->currentPartIndex == packet->numberOfParts);
+		}
+
+		// Quando chega aqui, já tem o conteúdo completo do arquivo em fullPayload
+		// Todas as outras informações são iguais em todos os pacotes de um arquivo,
+		//		portanto o último pacote respondido já vai ter as infos
+		switch (packet->command) {
+			case UPLOAD_FILE:
+				printf("\nNow I should save the file %s with payload: %s", packet->filename, fullPayload.c_str());
+		}
+
 		
-		Packet answer;
-		strcpy(answer.payload, "\nThe server answered 'bye'");
-		serverSocket.sendPacketToClient(connection.descriptor, &answer);
-		serverSocket.closeConnection(connection);
+		
+		Packet answer; 
+		strcpy(answer.payload, ("I received file " + string(packet->filename)).c_str());
+		serverSocket.sendPacketToClient(clientConnection.descriptor, &answer);
+		serverSocket.closeConnection(clientConnection);
 	}
 
 	serverSocket.closeSocket();

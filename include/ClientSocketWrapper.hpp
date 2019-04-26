@@ -8,13 +8,15 @@ using namespace std;
 class ClientSocketWrapper : public SocketWrapper {
 
     public: 
-        ClientSocketWrapper(string serverHostname, int serverPort);
         Packet* receivePacketFromServer();
-        void sendPacketToServer(Packet* packet);
-        bool foundHostName = false;
+        bool sendPacketToServer(Packet* packet);
+        bool setServer(string serverHostname, int serverPort);
+        bool connectToServer();
+        bool uploadFileToServer(char* filename);
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);
+        struct sockaddr_in serverAddress;
 
 };
 

@@ -1,17 +1,21 @@
 #include "../include/ClientSocketWrapper.hpp"
+#include "math.h"
 
-ClientSocketWrapper :: ClientSocketWrapper(string serverHostname, int serverPort) {
+int calculateNumberOfPayloads(const char* filename);
+
+bool ClientSocketWrapper :: setServer(string hostname, int port) {
     this->socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
-    hostent* host = gethostbyname(serverHostname.c_str());
+    hostent* host = gethostbyname(hostname.c_str());
     if (host != NULL) {
-      struct sockaddr_in serverAddress = this->buildAddress(*((struct in_addr *)host->h_addr), serverPort);
-      connect(this->socketDescriptor,(struct sockaddr *) &serverAddress, sizeof(serverAddress));
-      foundHostName = true;
-    } else {
-      printf("incorrect host name\n");
+        this->serverAddress = this->buildAddress(*((struct in_addr *)host->h_addr), port);
+        return true;
     }
+    return false;
 }
 
+bool ClientSocketWrapper :: connectToServer() {
+    return connect(this->socketDescriptor,(struct sockaddr *) &this->serverAddress, sizeof(this->serverAddress)) >= 0;
+}
 
 sockaddr_in ClientSocketWrapper :: buildAddress(in_addr hostname, int port) {
     struct sockaddr_in address = buildDefaultAddress(port);
@@ -23,6 +27,37 @@ Packet* ClientSocketWrapper :: receivePacketFromServer() {
     return receivePacket(this->socketDescriptor);
 }
 
-void ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
+bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
     return sendPacket(this->socketDescriptor, packet);
+}
+
+
+bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
+    File* file = fopen(filename, "r");
+    if (file == NULL) 
+        return false;
+    char currentPayload[PAYLOAD_SIZE] = "";
+    int numberOfReadBytes = 0;
+    int currentIndex = 1;
+    int numberOfParts = calculateNumberOfPayloads(filename);
+    while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, file)) > 0) {
+        Packet packet(filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
+        packet.command = UPLOAD_FILE;
+        if (!sendPacketToServer(&packet))
+            return false;
+        currentIndex++;
+        memset(currentPayload, 0, PAYLOAD_SIZE);
+    }
+    return true;
+}
+
+std::ifstream::pos_type getFilesize(const char* filename)
+{
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg(); 
+}
+
+int calculateNumberOfPayloads(const char* filename) {
+    int filesize = getFilesize(filename);
+    return ceil((float) filesize/PAYLOAD_SIZE);
 }
