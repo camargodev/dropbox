@@ -6,10 +6,11 @@
 using namespace std;
 
 const int PAYLOAD_SIZE = 64;
+const int UPLOAD_FILE = 1;
 
 struct Packet {
 
-    int type;
+    // int type;
     int command;
     char filename[FILENAME_SIZE];
     int currentPartIndex;

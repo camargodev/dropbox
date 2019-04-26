@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
     if (!clientSocket.connectToServer())
         return -1;
 
-    if (!clientSocket.sendFileToServer(filename)) {
-        printf("\nCould not send your message");
+    if (!clientSocket.uploadFileToServer(filename)) {
+        printf("\nCould not send your file");
     }
 
     Packet* answer = clientSocket.receivePacketFromServer();

@@ -32,7 +32,7 @@ bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
 }
 
 
-bool ClientSocketWrapper :: sendFileToServer(char* filename) {
+bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
     File* file = fopen(filename, "r");
     if (file == NULL) 
         return false;
@@ -42,6 +42,7 @@ bool ClientSocketWrapper :: sendFileToServer(char* filename) {
     int numberOfParts = calculateNumberOfPayloads(filename);
     while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, file)) > 0) {
         Packet packet(filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
+        packet.command = UPLOAD_FILE;
         if (!sendPacketToServer(&packet))
             return false;
         currentIndex++;

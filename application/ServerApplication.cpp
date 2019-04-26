@@ -18,14 +18,24 @@ int main(int argc, char *argv[])
 		bool receivedFullFile = false;
 		string fullPayload = "";
 
-		Packet* packet;
+		// Recebe pacotes até completar o arquivo
+		// No futuro, isso pode ser isolado em uma função
+		Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
 		while (!receivedFullFile) {
 			packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);	
 			fullPayload += string(packet->payload);
 			receivedFullFile = (packet->currentPartIndex == packet->numberOfParts);
 		}
 
-		printf("\nFull payload is %s", fullPayload.c_str());
+		// Quando chega aqui, já tem o conteúdo completo do arquivo em fullPayload
+		// Todas as outras informações são iguais em todos os pacotes de um arquivo,
+		//		portanto o último pacote respondido já vai ter as infos
+		switch (packet->command) {
+			case UPLOAD_FILE:
+				printf("\nNow I should save the file %s with payload: %s", packet->filename, fullPayload.c_str());
+		}
+
+		
 		
 		Packet answer; 
 		strcpy(answer.payload, ("I received file " + string(packet->filename)).c_str());

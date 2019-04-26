@@ -12,7 +12,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool sendPacketToServer(Packet* packet);
         bool setServer(string serverHostname, int serverPort);
         bool connectToServer();
-        bool sendFileToServer(char* filename);
+        bool uploadFileToServer(char* filename);
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);
