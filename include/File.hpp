@@ -5,12 +5,12 @@ using namespace std;
 
 const int FILENAME_SIZE = 30;
 
-struct File {
+// struct File {
 
-    char filename[FILENAME_SIZE];
-    int contentSize;
-    char* content;
+//     char filename[FILENAME_SIZE];
+//     int contentSize;
+//     char* content;
 
-};
+// };
 
 #endif

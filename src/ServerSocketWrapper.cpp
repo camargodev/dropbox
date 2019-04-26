@@ -7,20 +7,23 @@ ServerSocketWrapper :: ServerSocketWrapper(int port) {
 
 bool ServerSocketWrapper :: openSocket() {
     this->socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
-    if (this->socketDescriptor == -1)
+    if (this->socketDescriptor == -1) {
+        printf("\nHere is the scoop");
         return false;
+    }
     sockaddr_in address = this->buildAddress(port);
     return bind(this->socketDescriptor, (struct sockaddr *) &address, sizeof(address)) >= 0;
 }
 
 sockaddr_in ServerSocketWrapper :: buildAddress(int port) {
     struct sockaddr_in address = buildDefaultAddress(port);
-	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_addr.s_addr = INADDR_ANY;
     return address;
 }
 
 Packet* ServerSocketWrapper :: receivePacketFromClient(SocketDescriptor clientConnectionDescriptor) {
     Packet* packet = receivePacket(clientConnectionDescriptor);
+    return packet;
 }
 
 bool ServerSocketWrapper :: sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet) {
@@ -38,9 +41,5 @@ void ServerSocketWrapper :: setNumberOfClients(int numOfClients) {
 }
 
 void ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, File* file) {
-    int numberOfPackets = ceil(file->contentSize / PAYLOAD_SIZE);
-    for (int i = 0; i < numberOfPackets; i++) {
-        
-    }
 }
 

@@ -16,7 +16,6 @@ Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
 	char* buffer = new char[sizeof(Packet)];
     strcpy(buffer, "");
     int readBytes = recv(connectionDescriptor, buffer, sizeof(Packet), 0);
-    printf("\nI read %i bytes", readBytes);
     return (Packet *) buffer;
 }
 
