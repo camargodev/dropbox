@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
 		// Recebe pacotes até completar o arquivo
 		// No futuro, isso pode ser isolado em uma função
-		Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
+		Packet* packet;
 		while (!receivedFullFile) {
 			packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);	
 			fullPayload += string(packet->payload);
