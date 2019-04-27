@@ -25,9 +25,11 @@ int main(int argc, char *argv[])
 		bool receivedFullFile = false;
 		string fullPayload = "";
 
-		// Recebe pacotes até completar o arquivo
-		// No futuro, isso pode ser isolado em uma função
-		Packet* packet;
+		// Um pacote inicial é recebido com o username
+		Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
+		printf("\nClient %s conectado", packet->payload);
+
+		// Código para receber pacotes até finalizar um arquivo
 		while (!receivedFullFile) {
 			packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);	
 			fullPayload += string(packet->payload);
@@ -39,10 +41,8 @@ int main(int argc, char *argv[])
 		//		portanto o último pacote respondido já vai ter as infos
 		switch (packet->command) {
 			case UPLOAD_FILE:
-				printf("\nNow I should save the file %s with payload: %s", packet->filename, fullPayload.c_str());
+				printf("\nNow I should save the file %s with payload: %s\n", packet->filename, fullPayload.c_str());
 		}
-
-		
 		
 		Packet answer; 
 		strcpy(answer.payload, ("I received file " + string(packet->filename)).c_str());
