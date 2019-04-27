@@ -75,22 +75,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    // char filename[FILENAME_SIZE] = "/home/camargo/Documents/dropbox/input/test.txt";
-    // printf("I'll send %s", filename);
-
-
-    // char commandName[COMMAND_SIZE];
-    // strcpy(commandName, "upload ./input/test.txt");
-    // Command comm = proccesCommand(commandName);
-    // printf("\ncode = %i file = %s", comm.commandCode, comm.args.fileToUpload);
-
-    // if (!clientSocket.uploadFileToServer(filename)) {
-    //     printf("\nCould not send your file");
-    // }
-
-    // Packet* answer = clientSocket.receivePacketFromServer();
-    // printf("\nServer Answer is: %s\n", answer->payload);
-
     clientSocket.closeSocket();
     
     return 0;

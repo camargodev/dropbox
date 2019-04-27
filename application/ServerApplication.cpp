@@ -42,11 +42,6 @@ int main(int argc, char *argv[]) {
 				printf("\nRECEIVED %s:\n%s\n", packet->filename, fullPayload.c_str());
 		}
 		
-		// char message[PAYLOAD_SIZE]; 
-		// strcpy(message, ("I received file " + string(packet->filename)).c_str());
-		// Packet answer(message);
-		// serverSocket.sendPacketToClient(clientConnection.descriptor, &answer);
-		// serverSocket.closeConnection(clientConnection);
 	}
 
 	serverSocket.closeSocket();
