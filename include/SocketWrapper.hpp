@@ -18,6 +18,8 @@ using namespace std;
 using SocketDescriptor = int;
 
 using File = FILE;
+using Port = int;
+using Hostname = char*;
 
 class SocketWrapper {
 

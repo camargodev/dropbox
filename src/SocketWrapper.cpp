@@ -13,8 +13,7 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
 }
 
 Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
-	char* buffer = new char[sizeof(Packet)];
-    strcpy(buffer, "");
+	char* buffer = (char*) malloc(sizeof(Packet));
     int readBytes = recv(connectionDescriptor, buffer, sizeof(Packet), 0);
     return (Packet *) buffer;
 }

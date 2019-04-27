@@ -7,10 +7,8 @@ ServerSocketWrapper :: ServerSocketWrapper(int port) {
 
 bool ServerSocketWrapper :: openSocket() {
     this->socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
-    if (this->socketDescriptor == -1) {
-        printf("\nHere is the scoop");
+    if (this->socketDescriptor == -1)
         return false;
-    }
     sockaddr_in address = this->buildAddress(port);
     return bind(this->socketDescriptor, (struct sockaddr *) &address, sizeof(address)) >= 0;
 }
@@ -32,6 +30,7 @@ bool ServerSocketWrapper :: sendPacketToClient(SocketDescriptor clientConnection
 
 Connection ServerSocketWrapper :: acceptClientConnection() {
     Connection connection;
+    memset(&connection, 0, sizeof(Connection));
     connection.descriptor = accept(this->socketDescriptor, (struct sockaddr *) &connection.address, &connection.lenght);
     return connection;
 }

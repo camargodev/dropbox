@@ -1,26 +1,33 @@
 #include <stdio.h>
 #include "../include/ServerSocketWrapper.hpp"
 
-int main(int argc, char *argv[])
-{
-	ServerSocketWrapper serverSocket(SocketWrapper::DEFAULT_PORT);
+int getServerPort(int argc, char *argv[]) {
+	int port = SocketWrapper::DEFAULT_PORT;
+	if (argc == 2)
+        port = stoi(string(argv[1]));
+	return port;
+}
+
+int main(int argc, char *argv[]) {
+	ServerSocketWrapper serverSocket(getServerPort(argc, argv));
 	if (!serverSocket.openSocket()) {
 		printf("\nCould not open socket");
 		return -1;
 	}
 	serverSocket.setNumberOfClients(5);
+
+	Connection clientConnection = serverSocket.acceptClientConnection();
+	// Um pacote inicial é recebido com o username
+	Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
+	printf("\nClient %s conectado\n", packet->payload);
 	
 	while (true) {
 
-		printf("\nWaiting for client to connect");
-		Connection clientConnection = serverSocket.acceptClientConnection();
 
 		bool receivedFullFile = false;
 		string fullPayload = "";
 
-		// Recebe pacotes até completar o arquivo
-		// No futuro, isso pode ser isolado em uma função
-		Packet* packet;
+		// Código para receber pacotes até finalizar um arquivo
 		while (!receivedFullFile) {
 			packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);	
 			fullPayload += string(packet->payload);
@@ -32,15 +39,9 @@ int main(int argc, char *argv[])
 		//		portanto o último pacote respondido já vai ter as infos
 		switch (packet->command) {
 			case UPLOAD_FILE:
-				printf("\nNow I should save the file %s with payload: %s", packet->filename, fullPayload.c_str());
+				printf("\nRECEIVED %s:\n%s\n", packet->filename, fullPayload.c_str());
 		}
-
 		
-		
-		Packet answer; 
-		strcpy(answer.payload, ("I received file " + string(packet->filename)).c_str());
-		serverSocket.sendPacketToClient(clientConnection.descriptor, &answer);
-		serverSocket.closeConnection(clientConnection);
 	}
 
 	serverSocket.closeSocket();

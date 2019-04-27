@@ -31,6 +31,10 @@ bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
     return sendPacket(this->socketDescriptor, packet);
 }
 
+bool ClientSocketWrapper :: identifyUsername(char* username) {
+    Packet packetWithUserName(sizeof(username), username);
+    return sendPacketToServer(&packetWithUserName);
+}
 
 bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
     File* file = fopen(filename, "r");
