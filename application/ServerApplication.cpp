@@ -1,9 +1,16 @@
 #include <stdio.h>
 #include "../include/ServerSocketWrapper.hpp"
 
+int getServerPort(int argc, char *argv[]) {
+	int port = SocketWrapper::DEFAULT_PORT;
+	if (argc == 2)
+        port = stoi(string(argv[1]));
+	return port;
+}
+
 int main(int argc, char *argv[])
 {
-	ServerSocketWrapper serverSocket(SocketWrapper::DEFAULT_PORT);
+	ServerSocketWrapper serverSocket(getServerPort(argc, argv));
 	if (!serverSocket.openSocket()) {
 		printf("\nCould not open socket");
 		return -1;

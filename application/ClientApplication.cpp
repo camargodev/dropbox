@@ -1,17 +1,24 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "../include/ClientSocketWrapper.hpp"
+
+pair<Hostname, Port> getServerToConnect(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("No hostname was supplied. Please connect with ./client <server_ip> <server_port>");
+        exit(EXIT_FAILURE);
+    }
+    int port = SocketWrapper::DEFAULT_PORT;
+    if (argc == 3)
+        port = stoi(string(argv[2]));
+    return make_pair(argv[1], port);
+}
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
-        printf("No host name\n");
-        return -1;
-    }
-
+    pair<Hostname, Port> serverIpAndPort = getServerToConnect(argc, argv);
     ClientSocketWrapper clientSocket;
     
-    
-    if (!clientSocket.setServer(argv[1], SocketWrapper::DEFAULT_PORT)) {
+    if (!clientSocket.setServer(serverIpAndPort.first, serverIpAndPort.second)) {
         printf("\nHost %s:%i not found (is server running?)", argv[1], SocketWrapper::DEFAULT_PORT);
         return -1;
     }
