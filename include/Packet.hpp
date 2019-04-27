@@ -22,6 +22,11 @@ struct Packet {
 
     Packet(char payload[PAYLOAD_SIZE]) {
         strcpy(this->payload, payload);
+        strcpy(this->filename, "");
+        this->currentPartIndex = 1;
+        this->numberOfParts = 1;
+        this->payloadSize = PAYLOAD_SIZE;
+        strcpy(this->payload, payload);
     }
 
     Packet(char filename[FILENAME_SIZE],

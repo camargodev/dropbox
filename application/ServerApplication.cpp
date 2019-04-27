@@ -8,8 +8,7 @@ int getServerPort(int argc, char *argv[]) {
 	return port;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	ServerSocketWrapper serverSocket(getServerPort(argc, argv));
 	if (!serverSocket.openSocket()) {
 		printf("\nCould not open socket");
@@ -19,7 +18,6 @@ int main(int argc, char *argv[])
 	
 	while (true) {
 
-		printf("\nWaiting for client to connect");
 		Connection clientConnection = serverSocket.acceptClientConnection();
 
 		bool receivedFullFile = false;
@@ -44,8 +42,9 @@ int main(int argc, char *argv[])
 				printf("\nNow I should save the file %s with payload: %s\n", packet->filename, fullPayload.c_str());
 		}
 		
-		Packet answer; 
-		strcpy(answer.payload, ("I received file " + string(packet->filename)).c_str());
+		char message[PAYLOAD_SIZE]; 
+		strcpy(message, ("I received file " + string(packet->filename)).c_str());
+		Packet answer(message);
 		serverSocket.sendPacketToClient(clientConnection.descriptor, &answer);
 		serverSocket.closeConnection(clientConnection);
 	}
