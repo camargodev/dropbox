@@ -15,17 +15,17 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 	serverSocket.setNumberOfClients(5);
+
+	Connection clientConnection = serverSocket.acceptClientConnection();
+	// Um pacote inicial é recebido com o username
+	Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
+	printf("\nClient %s conectado\n", packet->payload);
 	
 	while (true) {
 
-		Connection clientConnection = serverSocket.acceptClientConnection();
 
 		bool receivedFullFile = false;
 		string fullPayload = "";
-
-		// Um pacote inicial é recebido com o username
-		Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
-		printf("\nClient %s conectado", packet->payload);
 
 		// Código para receber pacotes até finalizar um arquivo
 		while (!receivedFullFile) {
@@ -39,14 +39,14 @@ int main(int argc, char *argv[]) {
 		//		portanto o último pacote respondido já vai ter as infos
 		switch (packet->command) {
 			case UPLOAD_FILE:
-				printf("\nNow I should save the file %s with payload: %s\n", packet->filename, fullPayload.c_str());
+				printf("\nRECEIVED %s:\n%s\n", packet->filename, fullPayload.c_str());
 		}
 		
-		char message[PAYLOAD_SIZE]; 
-		strcpy(message, ("I received file " + string(packet->filename)).c_str());
-		Packet answer(message);
-		serverSocket.sendPacketToClient(clientConnection.descriptor, &answer);
-		serverSocket.closeConnection(clientConnection);
+		// char message[PAYLOAD_SIZE]; 
+		// strcpy(message, ("I received file " + string(packet->filename)).c_str());
+		// Packet answer(message);
+		// serverSocket.sendPacketToClient(clientConnection.descriptor, &answer);
+		// serverSocket.closeConnection(clientConnection);
 	}
 
 	serverSocket.closeSocket();

@@ -3,7 +3,7 @@
 
 using namespace std;
 
-const int FILENAME_SIZE = 30;
+const int FILENAME_SIZE = 80;
 
 // struct File {
 
