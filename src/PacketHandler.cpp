@@ -63,7 +63,7 @@ void PacketHandler :: handleReceivedPacket(int socket, Packet* packet) {
             addPacketToReceivedFile(socket, packet->filename, packet);
             if (packet->currentPartIndex == packet->numberOfParts) {
                 string content = getFileContent(socket, packet->filename);
-                printf("I finished Receiving file %s with payload %s\n", packet->filename, content.c_str());
+                printf("I received file %s with payload:\n%s\n", packet->filename, content.c_str());
                 removeFileFromBeingReceivedList(socket, packet->filename);
             }
             break;

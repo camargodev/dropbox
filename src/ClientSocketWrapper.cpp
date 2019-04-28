@@ -43,31 +43,5 @@ bool ClientSocketWrapper :: identifyUsername(char* username) {
 }
 
 bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
-    File* file = fopen(filename, "r");
-    if (file == NULL) 
-        return false;
-    char currentPayload[PAYLOAD_SIZE] = "";
-    int numberOfReadBytes = 0;
-    int currentIndex = 1;
-    int numberOfParts = calculateNumberOfPayloads(filename);
-    while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, file)) > 0) {
-        Packet packet(filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
-        packet.command = UPLOAD_FILE;
-        if (!sendPacketToServer(&packet))
-            return false;
-        currentIndex++;
-        memset(currentPayload, 0, PAYLOAD_SIZE);
-    }
-    return true;
-}
-
-std::ifstream::pos_type getFilesize(const char* filename)
-{
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-    return in.tellg(); 
-}
-
-int calculateNumberOfPayloads(const char* filename) {
-    int filesize = getFilesize(filename);
-    return ceil((float) filesize/PAYLOAD_SIZE);
+    return sendFile(this->socketDescriptor, filename);
 }

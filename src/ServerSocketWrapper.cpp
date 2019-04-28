@@ -39,6 +39,7 @@ void ServerSocketWrapper :: setNumberOfClients(int numOfClients) {
     listen(this->socketDescriptor, numOfClients);
 }
 
-void ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, File* file) {
+bool ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, char* filename) {
+    return sendFile(clientConnectionDescriptor, filename);
 }
 
