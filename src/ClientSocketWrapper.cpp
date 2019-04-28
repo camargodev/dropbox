@@ -32,8 +32,14 @@ bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
 }
 
 bool ClientSocketWrapper :: identifyUsername(char* username) {
-    Packet packetWithUserName(sizeof(username), username);
-    return sendPacketToServer(&packetWithUserName);
+    Packet* packet = new Packet;
+    packet->command = IDENTIFICATION;
+    strcpy(packet->payload, username);
+    packet->payloadSize = sizeof(username);
+    strcpy(packet->filename, "");
+    packet->currentPartIndex = 1;
+    packet->numberOfParts = 1;
+    return sendPacketToServer(packet);
 }
 
 bool ClientSocketWrapper :: uploadFileToServer(char* filename) {

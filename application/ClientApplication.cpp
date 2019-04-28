@@ -5,7 +5,7 @@
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
-        printf("No hostname was supplied. Please connect with ./client <username> <server_ip> <server_port>");
+        printf("No hostname was supplied. Please connect with ./client <username> <server_ip> <server_port>\n");
         exit(EXIT_FAILURE);
     }
     int port = SocketWrapper::DEFAULT_PORT;
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     ClientSocketWrapper clientSocket;
     
     if (!clientSocket.setServer(input.serverHostname, input.serverPort)) {
-        printf("\nHost %s:%i not found (is server running?)", argv[1], SocketWrapper::DEFAULT_PORT);
+        printf("Host %s:%i not found (is server running?)\n", argv[1], SocketWrapper::DEFAULT_PORT);
         return -1;
     }
 
@@ -56,12 +56,12 @@ int main(int argc, char *argv[])
         return -1;
 
     if (!clientSocket.identifyUsername(input.username)) {
-        printf("\nCould not send your username");
+        printf("Could not send your username\n");
     }
 
     bool shouldExit = false;
     while (!shouldExit) {
-        printf("\n> ");
+        printf("> ");
         char userCommand[COMMAND_SIZE] = "";
         fgets(userCommand, COMMAND_SIZE, stdin);
         Command command = proccesCommand(userCommand);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
                 break;
             case COMMAND_UPLOAD:
                 if (!clientSocket.uploadFileToServer(command.args.fileToUpload))
-                    printf("\nCould not send your file");
+                    printf("Could not send your file\n");
         }
     }
 

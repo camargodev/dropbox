@@ -13,15 +13,15 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
 }
 
 Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
-	char* buffer = (char*) malloc(sizeof(Packet));
-    int readBytes = recv(connectionDescriptor, buffer, sizeof(Packet), 0);
-    return (Packet *) buffer;
+	Packet* packet = (Packet*) malloc(sizeof(Packet));
+    int readBytes = recv(connectionDescriptor, packet, sizeof(Packet), 0);
+    return packet;
 }
 
 bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* packet) {
     int response = send(connectionDescriptor, (void *) packet, sizeof(Packet), 0);
     if (response < 0)
-        printf("\nError on send is %i", response);
+        printf("Error on send is %i\n", response);
     return response  >= 0;
 }
 

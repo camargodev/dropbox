@@ -2,11 +2,13 @@
 #define PACKET_HPP
 
 #include "File.hpp"
+#include <string.h>
 
 using namespace std;
 
 const int PAYLOAD_SIZE = 64;
 const int UPLOAD_FILE = 1;
+const int IDENTIFICATION = 2;
 
 struct Packet {
 
@@ -41,8 +43,10 @@ struct Packet {
         strcpy(this->payload, payload);
     }
 
-    Packet(int payloadSize,
+    Packet(int command,
+           int payloadSize,
            char payload[PAYLOAD_SIZE]) {
+        this->command = command;
         strcpy(this->filename, "");
         this->currentPartIndex = 1;
         this->numberOfParts = 1;
