@@ -22,9 +22,14 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
             if (packet->currentPartIndex == packet->numberOfParts) {
                 string content = packetHandler.getFileContent(socket, packet->filename);
-                printf("I received file %s with payload:\n%s\n", packet->filename, content.c_str());
-				ConnectedClient client = connHandler.getConnectedClientBySocket(socket);
-				printf("Now I should notify user %s with his sockets\n", client.username.c_str());
+                printf("\nI received file %s with payload:\n%s\n", packet->filename, content.c_str());
+				ConnectedClient connectedClient = connHandler.getConnectedClientBySocket(socket);
+				printf("Now I will notify user %s\n", connectedClient.username.c_str());
+				for (auto socket : connectedClient.openSockets) {
+					Packet answer;
+					strcpy(answer.payload, ("You have an update on file " + string(packet->filename)).c_str());
+					serverSocket.sendPacketToClient(socket, &answer);
+				}
                 packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
             }
 			return true;
@@ -36,7 +41,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 		case DISCONNECT:
 			ConnectedClient client = connHandler.getConnectedClientBySocket(socket);
-			printf("Client %s disconnected on socket %i\n", client.username.c_str(), socket); 
+			printf("\nClient %s disconnected on socket %i\n", client.username.c_str(), socket); 
 			connHandler.removeSocketFromUser(client.username, socket);
 			return false;
     }
@@ -63,11 +68,10 @@ int main(int argc, char *argv[]) {
 
 	while (true) {
 
-		printf("Waiting connection\n");
 		Connection clientConnection = serverSocket.acceptClientConnection();
 		int descriptor = clientConnection.descriptor;
 		pthread_t connectionThread;
-		printf("Connected with socket %i. Creating new thread...\n", descriptor);
+		printf("\nConnection detected. Creating new thread...\n");
 		pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
 
 	}

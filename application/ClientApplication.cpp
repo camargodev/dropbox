@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/InputCommand.hpp"
+
+ClientSocketWrapper clientSocket;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
@@ -42,10 +45,16 @@ Command proccesCommand(char userCommand[COMMAND_SIZE]) {
     return command;
 }
 
+void *handleServerAnswers(void* dummy) {
+    while (true) {
+        Packet* packet = clientSocket.receivePacketFromServer();
+        printf("SERVER sent: %s\n", packet->payload);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     ClientInput input = getServerToConnect(argc, argv);
-    ClientSocketWrapper clientSocket;
     
     if (!clientSocket.setServer(input.serverHostname, input.serverPort)) {
         printf("Host %s:%i not found (is server running?)\n", argv[1], SocketWrapper::DEFAULT_PORT);
@@ -58,6 +67,10 @@ int main(int argc, char *argv[])
     if (!clientSocket.identifyUsername(input.username)) {
         printf("Could not send your username\n");
     }
+
+    pthread_t connectionThread;
+    printf("Creating thread to get server answers...\n");
+    pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
 
     bool shouldExit = false;
     while (!shouldExit) {
