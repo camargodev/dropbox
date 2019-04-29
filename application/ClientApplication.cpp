@@ -53,6 +53,9 @@ Command proccesCommand(char userCommand[COMMAND_SIZE]) {
         case COMMAND_DOWNLOAD:
             command.args.fileToDownload = getInputFilename();
             break;
+        case COMMAND_DELETE:
+            command.args.fileToDelete = getInputFilename();
+            break;
     }
     return command;
 }
@@ -122,6 +125,18 @@ int main(int argc, char *argv[])
             case COMMAND_DOWNLOAD:
                 if (!clientSocket.askToDownloadFile(command.args.fileToDownload))
                     printf("Could not download your file\n");
+                break;
+            case COMMAND_DELETE:
+                printf("Delete not implemented yet\n");
+                break;
+            case COMMAND_LIST_CLIENT:
+                printf("List Client not implemented yet\n");
+                break;
+            case COMMAND_LIST_SERVER:
+                printf("List Server not implemented yet\n");
+                break;
+            case COMMAND_GET_SỲNC_DIR:
+                printf("Get Sync Dir not implemented yet\n");
                 break;
         }
     }
