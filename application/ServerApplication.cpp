@@ -36,7 +36,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 		case DISCONNECT:
 			ConnectedClient client = connHandler.getConnectedClientBySocket(socket);
-			printf("Client %s disconnected on socket %i", client.username.c_str(), socket); 
+			printf("Client %s disconnected on socket %i\n", client.username.c_str(), socket); 
 			connHandler.removeSocketFromUser(client.username, socket);
 			return false;
     }
@@ -61,43 +61,15 @@ int main(int argc, char *argv[]) {
 	}
 	serverSocket.setNumberOfClients(5);
 
-	// Connection clientConnection = serverSocket.acceptClientConnection();
-	// Um pacote inicial é recebido com o username
-	// Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
-	// printf("\nClient %s conectado\n", packet->payload);
-	
 	while (true) {
 
 		printf("Waiting connection\n");
 		Connection clientConnection = serverSocket.acceptClientConnection();
+		int descriptor = clientConnection.descriptor;
 		pthread_t connectionThread;
-		int x = clientConnection.descriptor;
-		printf("Connected with socket %i. Creating new thread...\n", x);
-		pthread_create(&connectionThread, NULL, handleNewConnection, &x);
+		printf("Connected with socket %i. Creating new thread...\n", descriptor);
+		pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
 
-
-		// printf("\nWaiting to receive packet");
-		// Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
-		// handleReceivedPacket(clientConnection.descriptor, packet);
-
-		// bool receivedFullFile = false;
-		// string fullPayload = "";
-
-		// // Código para receber pacotes até finalizar um arquivo
-		// while (!receivedFullFile) {
-		// 	packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);	
-		// 	fullPayload += string(packet->payload);
-		// 	receivedFullFile = (packet->currentPartIndex == packet->numberOfParts);
-		// }
-
-		// // Quando chega aqui, já tem o conteúdo completo do arquivo em fullPayload
-		// // Todas as outras informações são iguais em todos os pacotes de um arquivo,
-		// //		portanto o último pacote respondido já vai ter as infos
-		// switch (packet->command) {
-		// 	case UPLOAD_FILE:
-		// 		printf("\nRECEIVED %s:\n%s\n", packet->filename, fullPayload.c_str());
-		// }
-		
 	}
 
 	serverSocket.closeSocket();
