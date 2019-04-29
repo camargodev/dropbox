@@ -1,7 +1,7 @@
 #include "../include/ServerSocketWrapper.hpp"
 #include "math.h"
 
-ServerSocketWrapper :: ServerSocketWrapper(int port) {
+void ServerSocketWrapper :: listenOnPort(int port) {
     this->port = port;
 }
 

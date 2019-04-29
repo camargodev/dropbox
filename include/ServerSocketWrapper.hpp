@@ -8,7 +8,7 @@ using namespace std;
 class ServerSocketWrapper : public SocketWrapper {
 
     public: 
-        ServerSocketWrapper(int port);
+        void listenOnPort(int port);
         bool openSocket();
         Packet* receivePacketFromClient(SocketDescriptor clientConnectionDescriptor);
         bool sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet);
