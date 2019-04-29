@@ -35,12 +35,12 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 			return true;
 
 		case DOWNLOAD_REQUISITION:
-			printf("Sending file %s to client of socket %i\n", packet->payload, socket);
+			printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
 			serverSocket.sendFileToClient(socket, packet->payload);
 			return true;
         
 		case IDENTIFICATION:
-            printf("Client %s connected on socket %i\n", packet->payload, socket);
+            printf("\nClient %s connected on socket %i\n", packet->payload, socket);
 			connHandler.addSocketToClient(packet->payload, socket);
             return true;
 
@@ -77,7 +77,6 @@ int main(int argc, char *argv[]) {
 		pthread_t connectionThread;
 		Connection clientConnection = serverSocket.acceptClientConnection();
 		int descriptor = clientConnection.descriptor;
-		printf("\nConnection detected. Creating new thread...\n");
 		pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
 
 	}

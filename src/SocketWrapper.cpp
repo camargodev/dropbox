@@ -39,8 +39,7 @@ bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescripto
     while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, file)) > 0) {
         Packet packet(filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
         packet.command = command;
-        if (!sendPacket(connectionDescriptor, &packet))
-            return false;
+        sendPacket(connectionDescriptor, &packet);
         currentIndex++;
         memset(currentPayload, 0, PAYLOAD_SIZE);
     }

@@ -51,7 +51,6 @@ Command proccesCommand(char userCommand[COMMAND_SIZE]) {
             command.args.fileToUpload = getInputFilename();
             break;
         case COMMAND_DOWNLOAD:
-            printf("DOWNLOAD\n");
             command.args.fileToDownload = getInputFilename();
             break;
     }
@@ -70,6 +69,9 @@ bool handleReceivedPacket(Packet* packet) {
 			return true;
         case SIMPLE_MESSAGE:
             printf("I received a simple message from server: %s\n", packet->payload);
+            return true;
+        case FILE_DOWNLOAD_ERROR:
+            printf("Unable to download file %s: %s\n", packet->filename, packet->payload);
             return true;
     }
 }
