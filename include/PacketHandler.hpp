@@ -21,7 +21,7 @@ public:
     void addPacketToReceivedFile(int socket, const string& filename, Packet* packet);
     string getFileContent(int socket, const string& filename);
     void removeFileFromBeingReceivedList(int socket, const string& filename);
-    void handleReceivedPacket(int socket, Packet* packet);
+    // void handleReceivedPacket(int socket, Packet* packet);
 
 private:
     vector<FileBeingReceived> filesBeingReceived;

@@ -57,18 +57,18 @@ void PacketHandler :: removeFileFromBeingReceivedList(int socket, const string& 
 //     }
 // }
 
-void PacketHandler :: handleReceivedPacket(int socket, Packet* packet) {
-    switch (packet->command) {
-        case UPLOAD_FILE:
-            addPacketToReceivedFile(socket, packet->filename, packet);
-            if (packet->currentPartIndex == packet->numberOfParts) {
-                string content = getFileContent(socket, packet->filename);
-                printf("I received file %s with payload:\n%s\n", packet->filename, content.c_str());
-                removeFileFromBeingReceivedList(socket, packet->filename);
-            }
-            break;
-        case IDENTIFICATION:
-            printf("Client %s connected\n", packet->payload);
-            break;
-    }
-}
+// void PacketHandler :: handleReceivedPacket(int socket, Packet* packet) {
+//     switch (packet->command) {
+//         case UPLOAD_FILE:
+//             addPacketToReceivedFile(socket, packet->filename, packet);
+//             if (packet->currentPartIndex == packet->numberOfParts) {
+//                 string content = getFileContent(socket, packet->filename);
+//                 printf("I received file %s with payload:\n%s\n", packet->filename, content.c_str());
+//                 removeFileFromBeingReceivedList(socket, packet->filename);
+//             }
+//             break;
+//         case IDENTIFICATION:
+//             printf("Client %s connected\n", packet->payload);
+//             break;
+//     }
+// }

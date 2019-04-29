@@ -42,6 +42,13 @@ bool ClientSocketWrapper :: identifyUsername(char* username) {
     return sendPacketToServer(packet);
 }
 
+bool ClientSocketWrapper :: disconnectFromServer() {
+    Packet packet(DISCONNECT);
+    bool sendResponse = sendPacketToServer(&packet);
+    closeSocket();
+    return sendResponse;
+}
+
 bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
     return sendFile(this->socketDescriptor, filename);
 }

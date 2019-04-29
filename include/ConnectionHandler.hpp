@@ -21,6 +21,8 @@ public:
     void addSocketToClient(const string& username, SocketDescriptor socket);
     vector<SocketDescriptor> getSocketsByUsername(const string& username);
     void removeSocketFromUser(const string& username, SocketDescriptor socket);
+    ConnectedClient getConnectedClientBySocket(int socket);
+    void disconnectSocket(int socket);
 private:
     vector<ConnectedClient> connectedClients;
     bool isClientAlreadyConnected(const string& username);

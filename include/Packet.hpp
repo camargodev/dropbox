@@ -9,10 +9,10 @@ using namespace std;
 const int PAYLOAD_SIZE = 64;
 const int UPLOAD_FILE = 1;
 const int IDENTIFICATION = 2;
+const int DISCONNECT = 3;
 
 struct Packet {
 
-    // int type;
     int command;
     char filename[FILENAME_SIZE];
     int currentPartIndex;
@@ -53,6 +53,16 @@ struct Packet {
         this->payloadSize = payloadSize;
         strcpy(this->payload, payload);
     }
+
+    Packet(int command) {
+        this->command = command;
+        strcpy(this->filename, "");
+        this->currentPartIndex = 1;
+        this->numberOfParts = 1;
+        this->payloadSize = 0;
+        strcpy(this->payload, "");
+    }
+
 
 };
 

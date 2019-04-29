@@ -1,6 +1,11 @@
 #include <stdio.h>
+#include <iostream>
 #include "../include/ServerSocketWrapper.hpp"
 #include "../include/PacketHandler.hpp"
+#include "../include/ConnectionHandler.hpp"
+
+PacketHandler packetHandler;
+ConnectionHandler connHandler;
 
 int getServerPort(int argc, char *argv[]) {
 	int port = SocketWrapper::DEFAULT_PORT;
@@ -9,9 +14,33 @@ int getServerPort(int argc, char *argv[]) {
 	return port;
 }
 
+void handleReceivedPacket(int socket, Packet* packet) {
+    switch (packet->command) {
+        case UPLOAD_FILE:
+            packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
+            if (packet->currentPartIndex == packet->numberOfParts) {
+                string content = packetHandler.getFileContent(socket, packet->filename);
+                printf("I received file %s with payload:\n%s\n", packet->filename, content.c_str());
+				ConnectedClient client = connHandler.getConnectedClientBySocket(socket);
+				printf("Now I should notify user %s with his sockets", client.username.c_str());
+                packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
+            }
+            break;
+        
+		case IDENTIFICATION:
+            printf("Client %s connected on socket %i\n", packet->payload, socket);
+			connHandler.addSocketToClient(packet->payload, socket);
+            break;
+
+		case DISCONNECT:
+			ConnectedClient client = connHandler.getConnectedClientBySocket(socket);
+			printf("Client %s disconnected on socket %i", client.username.c_str(), socket); 
+			connHandler.removeSocketFromUser(client.username, socket);
+    }
+}
+
 int main(int argc, char *argv[]) {
 	ServerSocketWrapper serverSocket(getServerPort(argc, argv));
-	PacketHandler packetHandler;
 
 	if (!serverSocket.openSocket()) {
 		printf("Could not open socket\n");
@@ -28,7 +57,7 @@ int main(int argc, char *argv[]) {
 
 		// printf("\nWaiting to receive packet");
 		Packet* packet = serverSocket.receivePacketFromClient(clientConnection.descriptor);
-		packetHandler.handleReceivedPacket(clientConnection.descriptor, packet);
+		handleReceivedPacket(clientConnection.descriptor, packet);
 
 		// bool receivedFullFile = false;
 		// string fullPayload = "";

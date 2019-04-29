@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
         Command command = proccesCommand(userCommand);
         switch (command.commandCode) {
             case COMMAND_EXIT:
+                clientSocket.disconnectFromServer();
                 shouldExit = true;
                 break;
             case COMMAND_UPLOAD:

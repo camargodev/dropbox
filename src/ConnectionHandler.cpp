@@ -40,3 +40,10 @@ void ConnectionHandler :: removeSocketFromUser(const string& username, int socke
             connectedClient.openSockets.erase(remove(connectedClient.openSockets.begin(), 
                     connectedClient.openSockets.end(), socket), connectedClient.openSockets.end());
 }
+
+ConnectedClient ConnectionHandler :: getConnectedClientBySocket(int socket) {
+    for (auto connectedClient : connectedClients)
+        for (auto openSocket : connectedClient.openSockets)
+            if (openSocket == socket)
+                return connectedClient;
+}
