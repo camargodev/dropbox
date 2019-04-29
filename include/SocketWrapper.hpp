@@ -37,7 +37,7 @@ class SocketWrapper {
         sockaddr_in buildDefaultAddress(int port);
         Packet* receivePacket(SocketDescriptor connectionDescriptor);
         bool sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
-        bool sendFile(SocketDescriptor connectionDescriptor, char* filename);
+        bool sendFile(int command, SocketDescriptor connectionDescriptor, char* filename);
 
 };
 

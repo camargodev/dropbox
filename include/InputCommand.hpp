@@ -5,6 +5,7 @@ using namespace std;
 
 const int COMMAND_EXIT = 000;
 const int COMMAND_UPLOAD = 100;
+const int COMMAND_DOWNLOAD = 200;
 
 const int INVALID_COMMAND = -1;
 
@@ -12,6 +13,7 @@ const int COMMAND_SIZE = 128;
 
 union CommandArguments {
     char* fileToUpload;
+    char* fileToDownload;
 };
 
 struct Command {

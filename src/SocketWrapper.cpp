@@ -28,7 +28,7 @@ bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* 
     return response  >= 0;
 }
 
-bool SocketWrapper :: sendFile(SocketDescriptor connectionDescriptor, char* filename) {
+bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescriptor, char* filename) {
     File* file = fopen(filename, "r");
     if (file == NULL) 
         return false;
@@ -38,9 +38,8 @@ bool SocketWrapper :: sendFile(SocketDescriptor connectionDescriptor, char* file
     int numberOfParts = calculateNumberOfPayloads(filename);
     while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, file)) > 0) {
         Packet packet(filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
-        packet.command = UPLOAD_FILE;
-        if (!sendPacket(connectionDescriptor, &packet))
-            return false;
+        packet.command = command;
+        sendPacket(connectionDescriptor, &packet);
         currentIndex++;
         memset(currentPayload, 0, PAYLOAD_SIZE);
     }

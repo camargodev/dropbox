@@ -26,16 +26,21 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 				ConnectedClient connectedClient = connHandler.getConnectedClientBySocket(socket);
 				printf("Now I will notify user %s\n", connectedClient.username.c_str());
 				for (auto socket : connectedClient.openSockets) {
-					Packet answer;
+					Packet answer(SIMPLE_MESSAGE);
 					strcpy(answer.payload, ("You have an update on file " + string(packet->filename)).c_str());
 					serverSocket.sendPacketToClient(socket, &answer);
 				}
                 packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
             }
 			return true;
+
+		case DOWNLOAD_REQUISITION:
+			printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
+			serverSocket.sendFileToClient(socket, packet->payload);
+			return true;
         
 		case IDENTIFICATION:
-            printf("Client %s connected on socket %i\n", packet->payload, socket);
+            printf("\nClient %s connected on socket %i\n", packet->payload, socket);
 			connHandler.addSocketToClient(packet->payload, socket);
             return true;
 
@@ -44,6 +49,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 			printf("\nClient %s disconnected on socket %i\n", client.username.c_str(), socket); 
 			connHandler.removeSocketFromUser(client.username, socket);
 			return false;
+
     }
 }
 
@@ -68,10 +74,9 @@ int main(int argc, char *argv[]) {
 
 	while (true) {
 
+		pthread_t connectionThread;
 		Connection clientConnection = serverSocket.acceptClientConnection();
 		int descriptor = clientConnection.descriptor;
-		pthread_t connectionThread;
-		printf("\nConnection detected. Creating new thread...\n");
 		pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
 
 	}

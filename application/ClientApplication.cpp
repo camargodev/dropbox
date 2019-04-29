@@ -3,8 +3,11 @@
 #include <pthread.h>
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/InputCommand.hpp"
+#include "../include/PacketHandler.hpp"
 
 ClientSocketWrapper clientSocket;
+PacketHandler packetHandler;
+SocketDescriptor serverDescriptor;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
@@ -23,7 +26,17 @@ int getCommandCode(char* commandName) {
         return COMMAND_UPLOAD;
     if (strCommand.compare("exit") == 0)
         return COMMAND_EXIT;
+    if (strCommand.compare("download") == 0)
+        return COMMAND_DOWNLOAD;
     return INVALID_COMMAND;
+}
+
+char* getInputFilename() {
+    char* filename = strtok(NULL, "\0");
+    int filenameSize = strlen(filename);
+    if (filename[filenameSize - 1] == '\n')
+        filename[filenameSize - 1] = 0;
+    return filename;
 }
 
 Command proccesCommand(char userCommand[COMMAND_SIZE]) {
@@ -35,20 +48,38 @@ Command proccesCommand(char userCommand[COMMAND_SIZE]) {
     Command command(commandCode);
     switch (commandCode) {
         case COMMAND_UPLOAD:
-            char* filename = strtok(NULL, "\0");
-            int filenameSize = strlen(filename);
-            if (filename[filenameSize - 1] == '\n')
-                filename[filenameSize - 1] = 0;
-            command.args.fileToUpload = filename;
+            command.args.fileToUpload = getInputFilename();
+            break;
+        case COMMAND_DOWNLOAD:
+            command.args.fileToDownload = getInputFilename();
             break;
     }
     return command;
 }
 
+bool handleReceivedPacket(Packet* packet) {
+    switch (packet->command) {
+        case DOWNLOADED_FILE:
+            packetHandler.addPacketToReceivedFile(serverDescriptor, packet->filename, packet);
+            if (packet->currentPartIndex == packet->numberOfParts) {
+                string content = packetHandler.getFileContent(serverDescriptor, packet->filename);
+                printf("\nI downloaded file %s with payload:\n%s\n", packet->filename, content.c_str());
+				packetHandler.removeFileFromBeingReceivedList(serverDescriptor, packet->filename);
+            }
+			return true;
+        case SIMPLE_MESSAGE:
+            printf("I received a simple message from server: %s\n", packet->payload);
+            return true;
+        case FILE_DOWNLOAD_ERROR:
+            printf("Unable to download file %s: %s\n", packet->filename, packet->payload);
+            return true;
+    }
+}
+
 void *handleServerAnswers(void* dummy) {
     while (true) {
         Packet* packet = clientSocket.receivePacketFromServer();
-        printf("SERVER sent: %s\n", packet->payload);
+        handleReceivedPacket(packet);
     }
 }
 
@@ -56,17 +87,19 @@ int main(int argc, char *argv[])
 {
     ClientInput input = getServerToConnect(argc, argv);
     
-    if (!clientSocket.setServer(input.serverHostname, input.serverPort)) {
+    if (!clientSocket.setServer(input.serverHostname, input.serverPort)) 
+        return -1;
+
+    if (!clientSocket.connectToServer()) {
         printf("Host %s:%i not found (is server running?)\n", argv[1], SocketWrapper::DEFAULT_PORT);
         return -1;
     }
 
-    if (!clientSocket.connectToServer())
-        return -1;
-
     if (!clientSocket.identifyUsername(input.username)) {
         printf("Could not send your username\n");
     }
+
+    serverDescriptor = clientSocket.getSocketDescriptor();
 
     pthread_t connectionThread;
     printf("Creating thread to get server answers...\n");
@@ -74,7 +107,6 @@ int main(int argc, char *argv[])
 
     bool shouldExit = false;
     while (!shouldExit) {
-        printf("> ");
         char userCommand[COMMAND_SIZE] = "";
         fgets(userCommand, COMMAND_SIZE, stdin);
         Command command = proccesCommand(userCommand);
@@ -86,6 +118,11 @@ int main(int argc, char *argv[])
             case COMMAND_UPLOAD:
                 if (!clientSocket.uploadFileToServer(command.args.fileToUpload))
                     printf("Could not send your file\n");
+                break;
+            case COMMAND_DOWNLOAD:
+                if (!clientSocket.askToDownloadFile(command.args.fileToDownload))
+                    printf("Could not download your file\n");
+                break;
         }
     }
 
