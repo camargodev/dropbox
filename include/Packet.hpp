@@ -10,6 +10,7 @@ const int PAYLOAD_SIZE = 64;
 const int UPLOAD_FILE = 1;
 const int IDENTIFICATION = 2;
 const int DISCONNECT = 3;
+const int SIMPLE_MESSAGE = 4;
 
 struct Packet {
 

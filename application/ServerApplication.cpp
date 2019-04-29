@@ -26,7 +26,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 				ConnectedClient connectedClient = connHandler.getConnectedClientBySocket(socket);
 				printf("Now I will notify user %s\n", connectedClient.username.c_str());
 				for (auto socket : connectedClient.openSockets) {
-					Packet answer;
+					Packet answer(SIMPLE_MESSAGE);
 					strcpy(answer.payload, ("You have an update on file " + string(packet->filename)).c_str());
 					serverSocket.sendPacketToClient(socket, &answer);
 				}
@@ -68,9 +68,9 @@ int main(int argc, char *argv[]) {
 
 	while (true) {
 
+		pthread_t connectionThread;
 		Connection clientConnection = serverSocket.acceptClientConnection();
 		int descriptor = clientConnection.descriptor;
-		pthread_t connectionThread;
 		printf("\nConnection detected. Creating new thread...\n");
 		pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
 
