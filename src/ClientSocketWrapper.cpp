@@ -50,5 +50,10 @@ bool ClientSocketWrapper :: disconnectFromServer() {
 }
 
 bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
-    return sendFile(this->socketDescriptor, filename);
+    return sendFile(UPLOAD_FILE, this->socketDescriptor, filename);
+}
+
+bool ClientSocketWrapper :: askToDownloadFile(char* filename) {
+    Packet packet(DOWNLOAD_REQUISITION, sizeof(filename), filename);
+    return sendPacketToServer(&packet);
 }

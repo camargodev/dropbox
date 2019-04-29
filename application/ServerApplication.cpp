@@ -33,6 +33,11 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                 packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
             }
 			return true;
+
+		case DOWNLOAD_REQUISITION:
+			printf("Sending file %s to client of socket %i\n", packet->payload, socket);
+			serverSocket.sendFileToClient(socket, packet->payload);
+			return true;
         
 		case IDENTIFICATION:
             printf("Client %s connected on socket %i\n", packet->payload, socket);
@@ -44,6 +49,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 			printf("\nClient %s disconnected on socket %i\n", client.username.c_str(), socket); 
 			connHandler.removeSocketFromUser(client.username, socket);
 			return false;
+
     }
 }
 

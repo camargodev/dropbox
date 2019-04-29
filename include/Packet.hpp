@@ -11,6 +11,8 @@ const int UPLOAD_FILE = 1;
 const int IDENTIFICATION = 2;
 const int DISCONNECT = 3;
 const int SIMPLE_MESSAGE = 4;
+const int DOWNLOAD_REQUISITION = 5;
+const int DOWNLOADED_FILE = 6;
 
 struct Packet {
 

@@ -26,7 +26,17 @@ int getCommandCode(char* commandName) {
         return COMMAND_UPLOAD;
     if (strCommand.compare("exit") == 0)
         return COMMAND_EXIT;
+    if (strCommand.compare("download") == 0)
+        return COMMAND_DOWNLOAD;
     return INVALID_COMMAND;
+}
+
+char* getInputFilename() {
+    char* filename = strtok(NULL, "\0");
+    int filenameSize = strlen(filename);
+    if (filename[filenameSize - 1] == '\n')
+        filename[filenameSize - 1] = 0;
+    return filename;
 }
 
 Command proccesCommand(char userCommand[COMMAND_SIZE]) {
@@ -38,11 +48,11 @@ Command proccesCommand(char userCommand[COMMAND_SIZE]) {
     Command command(commandCode);
     switch (commandCode) {
         case COMMAND_UPLOAD:
-            char* filename = strtok(NULL, "\0");
-            int filenameSize = strlen(filename);
-            if (filename[filenameSize - 1] == '\n')
-                filename[filenameSize - 1] = 0;
-            command.args.fileToUpload = filename;
+            command.args.fileToUpload = getInputFilename();
+            break;
+        case COMMAND_DOWNLOAD:
+            printf("DOWNLOAD\n");
+            command.args.fileToDownload = getInputFilename();
             break;
     }
     return command;
@@ -50,11 +60,11 @@ Command proccesCommand(char userCommand[COMMAND_SIZE]) {
 
 bool handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
-        case UPLOAD_FILE:
+        case DOWNLOADED_FILE:
             packetHandler.addPacketToReceivedFile(serverDescriptor, packet->filename, packet);
             if (packet->currentPartIndex == packet->numberOfParts) {
                 string content = packetHandler.getFileContent(serverDescriptor, packet->filename);
-                printf("\nI received file %s with payload:\n%s\n", packet->filename, content.c_str());
+                printf("\nI downloaded file %s with payload:\n%s\n", packet->filename, content.c_str());
 				packetHandler.removeFileFromBeingReceivedList(serverDescriptor, packet->filename);
             }
 			return true;
@@ -95,7 +105,6 @@ int main(int argc, char *argv[])
 
     bool shouldExit = false;
     while (!shouldExit) {
-        printf("> ");
         char userCommand[COMMAND_SIZE] = "";
         fgets(userCommand, COMMAND_SIZE, stdin);
         Command command = proccesCommand(userCommand);
@@ -107,6 +116,11 @@ int main(int argc, char *argv[])
             case COMMAND_UPLOAD:
                 if (!clientSocket.uploadFileToServer(command.args.fileToUpload))
                     printf("Could not send your file\n");
+                break;
+            case COMMAND_DOWNLOAD:
+                if (!clientSocket.askToDownloadFile(command.args.fileToDownload))
+                    printf("Could not download your file\n");
+                break;
         }
     }
 

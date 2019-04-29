@@ -40,6 +40,6 @@ void ServerSocketWrapper :: setNumberOfClients(int numOfClients) {
 }
 
 bool ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, char* filename) {
-    return sendFile(clientConnectionDescriptor, filename);
+    return sendFile(DOWNLOADED_FILE, clientConnectionDescriptor, filename);
 }
 
