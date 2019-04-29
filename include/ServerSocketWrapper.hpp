@@ -8,13 +8,13 @@ using namespace std;
 class ServerSocketWrapper : public SocketWrapper {
 
     public: 
-        ServerSocketWrapper(int port);
+        void listenOnPort(int port);
         bool openSocket();
         Packet* receivePacketFromClient(SocketDescriptor clientConnectionDescriptor);
         bool sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet);
         void setNumberOfClients(int numOfClients);
         Connection acceptClientConnection(); 
-        void sendFileToClient(SocketDescriptor clientConnectionDescriptor, File* file);
+        bool sendFileToClient(SocketDescriptor clientConnectionDescriptor, char* filename);
 
     private:
         sockaddr_in buildAddress(int port);

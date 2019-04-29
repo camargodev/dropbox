@@ -1,4 +1,7 @@
 #include "../include/SocketWrapper.hpp"
+#include "math.h"
+
+int calculateNumberOfPayloads(const char* filename);
 
 SocketDescriptor SocketWrapper :: getSocketDescriptor() {
     return this->socketDescriptor;
@@ -13,16 +16,46 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
 }
 
 Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
-	char* buffer = (char*) malloc(sizeof(Packet));
-    int readBytes = recv(connectionDescriptor, buffer, sizeof(Packet), 0);
-    return (Packet *) buffer;
+	Packet* packet = (Packet*) malloc(sizeof(Packet));
+    int readBytes = recv(connectionDescriptor, packet, sizeof(Packet), 0);
+    return packet;
 }
 
 bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* packet) {
     int response = send(connectionDescriptor, (void *) packet, sizeof(Packet), 0);
     if (response < 0)
-        printf("\nError on send is %i", response);
+        printf("Error on send is %i\n", response);
     return response  >= 0;
+}
+
+bool SocketWrapper :: sendFile(SocketDescriptor connectionDescriptor, char* filename) {
+    File* file = fopen(filename, "r");
+    if (file == NULL) 
+        return false;
+    char currentPayload[PAYLOAD_SIZE] = "";
+    int numberOfReadBytes = 0;
+    int currentIndex = 1;
+    int numberOfParts = calculateNumberOfPayloads(filename);
+    while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, file)) > 0) {
+        Packet packet(filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
+        packet.command = UPLOAD_FILE;
+        if (!sendPacket(connectionDescriptor, &packet))
+            return false;
+        currentIndex++;
+        memset(currentPayload, 0, PAYLOAD_SIZE);
+    }
+    return true;
+}
+
+std::ifstream::pos_type getFilesize(const char* filename)
+{
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg(); 
+}
+
+int calculateNumberOfPayloads(const char* filename) {
+    int filesize = getFilesize(filename);
+    return ceil((float) filesize/PAYLOAD_SIZE);
 }
 
 void SocketWrapper :: closeConnection(Connection connection) {

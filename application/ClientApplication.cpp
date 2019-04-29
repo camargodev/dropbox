@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/InputCommand.hpp"
 
+ClientSocketWrapper clientSocket;
+
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
-        printf("No hostname was supplied. Please connect with ./client <username> <server_ip> <server_port>");
+        printf("No hostname was supplied. Please connect with ./client <username> <server_ip> <server_port>\n");
         exit(EXIT_FAILURE);
     }
     int port = SocketWrapper::DEFAULT_PORT;
@@ -42,13 +45,19 @@ Command proccesCommand(char userCommand[COMMAND_SIZE]) {
     return command;
 }
 
+void *handleServerAnswers(void* dummy) {
+    while (true) {
+        Packet* packet = clientSocket.receivePacketFromServer();
+        printf("SERVER sent: %s\n", packet->payload);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     ClientInput input = getServerToConnect(argc, argv);
-    ClientSocketWrapper clientSocket;
     
     if (!clientSocket.setServer(input.serverHostname, input.serverPort)) {
-        printf("\nHost %s:%i not found (is server running?)", argv[1], SocketWrapper::DEFAULT_PORT);
+        printf("Host %s:%i not found (is server running?)\n", argv[1], SocketWrapper::DEFAULT_PORT);
         return -1;
     }
 
@@ -56,22 +65,27 @@ int main(int argc, char *argv[])
         return -1;
 
     if (!clientSocket.identifyUsername(input.username)) {
-        printf("\nCould not send your username");
+        printf("Could not send your username\n");
     }
+
+    pthread_t connectionThread;
+    printf("Creating thread to get server answers...\n");
+    pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
 
     bool shouldExit = false;
     while (!shouldExit) {
-        printf("\n> ");
+        printf("> ");
         char userCommand[COMMAND_SIZE] = "";
         fgets(userCommand, COMMAND_SIZE, stdin);
         Command command = proccesCommand(userCommand);
         switch (command.commandCode) {
             case COMMAND_EXIT:
+                clientSocket.disconnectFromServer();
                 shouldExit = true;
                 break;
             case COMMAND_UPLOAD:
                 if (!clientSocket.uploadFileToServer(command.args.fileToUpload))
-                    printf("\nCould not send your file");
+                    printf("Could not send your file\n");
         }
     }
 

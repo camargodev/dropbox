@@ -1,7 +1,7 @@
 #include "../include/ServerSocketWrapper.hpp"
 #include "math.h"
 
-ServerSocketWrapper :: ServerSocketWrapper(int port) {
+void ServerSocketWrapper :: listenOnPort(int port) {
     this->port = port;
 }
 
@@ -39,6 +39,7 @@ void ServerSocketWrapper :: setNumberOfClients(int numOfClients) {
     listen(this->socketDescriptor, numOfClients);
 }
 
-void ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, File* file) {
+bool ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, char* filename) {
+    return sendFile(clientConnectionDescriptor, filename);
 }
 

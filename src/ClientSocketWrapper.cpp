@@ -32,36 +32,23 @@ bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
 }
 
 bool ClientSocketWrapper :: identifyUsername(char* username) {
-    Packet packetWithUserName(sizeof(username), username);
-    return sendPacketToServer(&packetWithUserName);
+    Packet* packet = new Packet;
+    packet->command = IDENTIFICATION;
+    strcpy(packet->payload, username);
+    packet->payloadSize = sizeof(username);
+    strcpy(packet->filename, "");
+    packet->currentPartIndex = 1;
+    packet->numberOfParts = 1;
+    return sendPacketToServer(packet);
+}
+
+bool ClientSocketWrapper :: disconnectFromServer() {
+    Packet packet(DISCONNECT);
+    bool sendResponse = sendPacketToServer(&packet);
+    closeSocket();
+    return sendResponse;
 }
 
 bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
-    File* file = fopen(filename, "r");
-    if (file == NULL) 
-        return false;
-    char currentPayload[PAYLOAD_SIZE] = "";
-    int numberOfReadBytes = 0;
-    int currentIndex = 1;
-    int numberOfParts = calculateNumberOfPayloads(filename);
-    while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, file)) > 0) {
-        Packet packet(filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
-        packet.command = UPLOAD_FILE;
-        if (!sendPacketToServer(&packet))
-            return false;
-        currentIndex++;
-        memset(currentPayload, 0, PAYLOAD_SIZE);
-    }
-    return true;
-}
-
-std::ifstream::pos_type getFilesize(const char* filename)
-{
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-    return in.tellg(); 
-}
-
-int calculateNumberOfPayloads(const char* filename) {
-    int filesize = getFilesize(filename);
-    return ceil((float) filesize/PAYLOAD_SIZE);
+    return sendFile(this->socketDescriptor, filename);
 }
