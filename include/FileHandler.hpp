@@ -12,10 +12,14 @@ public:
     void createFile(char* filename, char* content);
     int getFileSize(const char* filename);
     vector<FileForListing> getFilesInDir(char* dirName);    
+    void printFileList(vector<FileForListing> fileList);
+    char* getLocalDirectoryName();
+    char* getServerDirectoryNameForUser(char* username);
 
 private:
     string path;
     const int FILE_TYPE = 8;
+    string DEFAULT_DIR = "sync_dir"; 
 
     bool isFilenameValid(char* archiveName);
     bool isFile(int archiveType);

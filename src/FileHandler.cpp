@@ -1,6 +1,5 @@
 #include "../include/FileHandler.hpp"
 
-
 WrappedFile FileHandler :: getFileByFilename(char* filename) {
     WrappedFile wrappedFile(filename);
     wrappedFile.file = fopen(filename, "r");
@@ -11,6 +10,31 @@ WrappedFile FileHandler :: getFileByFilename(char* filename) {
 int FileHandler :: getFileSize(const char* filename) {
     std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
     return in.tellg(); 
+}
+
+int getLongestFilenameSize(vector<FileForListing> fileList) {
+    int maxFilenameSize = 0;
+    for (auto fileToList : fileList) {
+        int filenameSize = string(fileToList.filename).size(); 
+        if (filenameSize > maxFilenameSize)
+            maxFilenameSize = filenameSize;
+    }
+    return maxFilenameSize;
+}
+
+string getFilenameWithSpaces(char* filename, int filenameTotalSize) {
+    int filenameSize = string(filename).size();
+    string spaces(filenameTotalSize - filenameSize, ' ');
+    string totalFilename = string(filename) + spaces;
+    return totalFilename;
+}
+
+void FileHandler :: printFileList(vector<FileForListing> fileList) {
+    int longestFilenameSize = getLongestFilenameSize(fileList);
+    for (auto file : fileList) {
+        string filename = getFilenameWithSpaces(file.filename, longestFilenameSize);
+        printf("%s | %i | %i | %i\n", filename.c_str(), file.modificationTime, file.accessTime, file.creationTime);
+    }
 }
 
 vector<FileForListing> FileHandler :: getFilesInDir(char* dirName) {
@@ -42,5 +66,28 @@ bool FileHandler :: isFilenameValid(char* archiveName) {
 bool FileHandler :: isFile(int archiveType) {
     return archiveType == FILE_TYPE;
 }
+
+char* FileHandler :: getLocalDirectoryName() {
+    // @Cristiano: essa função pega o nome do diretório local do client (só sync_dir)
+    // Só descomentar quando o sync_dir estiver sendo criado
+    
+    // char defaultDir[DEFAULT_DIR.size() + 1];
+    // strcpy(defaultDir, DEFAULT_DIR.c_str());
+    // defaultDir[DEFAULT_DIR.size()] = '\0';
+    // return (char*) defaultDir;
+    return (char*) "./input"; 
+}
+
+char* FileHandler :: getServerDirectoryNameForUser(char* username) {
+    // @Cristiano: essa função pega o nome do diretório do client no servidor (sync_dir_username)
+    // Só descomentar quando o sync_dir estiver sendo criado
+    
+    // string fullDirName = DEFAULT_DIR + "_" + string(username);
+    // char defaultDir[fullDirName.size() + 1 ];
+    // strcpy(defaultDir, fullDirName.c_str());
+    // defaultDir[fullDirName.size()] = '\0';
+    // return (char*) defaultDir;
+    return (char*) "./input";
+};
 
 

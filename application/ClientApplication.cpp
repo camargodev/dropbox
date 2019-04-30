@@ -8,6 +8,7 @@
 ClientSocketWrapper clientSocket;
 PacketHandler packetHandler;
 SocketDescriptor serverDescriptor;
+FileHandler fileHandler;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
@@ -39,7 +40,7 @@ int getCommandCode(char* commandName) {
     return INVALID_INPUT;
 }
 
-char* getInputFilename() {
+char* getNextValueOnInput() {
     char* filename = strtok(NULL, "\0");
     int filenameSize = strlen(filename);
     if (filename[filenameSize - 1] == '\n')
@@ -56,13 +57,16 @@ Input proccesCommand(char userInput[INPUT_SIZE]) {
     Input input(inputCode);
     switch (inputCode) {
         case INPUT_UPLOAD:
-            input.args.fileToUpload = getInputFilename();
+            input.args.fileToUpload = getNextValueOnInput();
             break;
         case INPUT_DOWNLOAD:
-            input.args.fileToDownload = getInputFilename();
+            input.args.fileToDownload = getNextValueOnInput();
             break;
         case INPUT_DELETE:
-            input.args.fileToDelete = getInputFilename();
+            input.args.fileToDelete = getNextValueOnInput();
+            break;
+        case INPUT_LIST_CLIENT:
+            input.args.directory = fileHandler.getLocalDirectoryName();
             break;
     }
     return input;
@@ -142,7 +146,7 @@ int main(int argc, char *argv[])
                     printf("Could not delete your file\n");
                 break;
             case INPUT_LIST_CLIENT:
-                printf("List Client not implemented yet\n");
+                fileHandler.printFileList(fileHandler.getFilesInDir(input.args.directory));
                 break;
             case INPUT_LIST_SERVER:
                 printf("List Server not implemented yet\n");

@@ -19,6 +19,7 @@ union InputArguments {
     char* fileToUpload;
     char* fileToDownload;
     char* fileToDelete;
+    char* directory;
 };
 
 struct Input {
