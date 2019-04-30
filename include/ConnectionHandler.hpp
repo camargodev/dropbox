@@ -14,6 +14,8 @@ struct ConnectedClient {
     ConnectedClient(const string& username) {
         this->username = username;
     }
+
+    ConnectedClient() {}
 };
 
 class ConnectionHandler {

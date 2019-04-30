@@ -28,6 +28,14 @@ int getCommandCode(char* commandName) {
         return COMMAND_EXIT;
     if (strCommand.compare("download") == 0)
         return COMMAND_DOWNLOAD;
+    if (strCommand.compare("delete") == 0)
+        return COMMAND_DELETE;
+    if (strCommand.compare("list_client") == 0)
+        return COMMAND_LIST_CLIENT;
+    if (strCommand.compare("list_server") == 0)
+        return COMMAND_LIST_SERVER;
+    if (strCommand.compare("get_sync_dir") == 0)
+        return COMMAND_GET_SYNC_DIR;
     return INVALID_COMMAND;
 }
 
@@ -75,6 +83,9 @@ bool handleReceivedPacket(Packet* packet) {
             return true;
         case FILE_DOWNLOAD_ERROR:
             printf("Unable to download file %s: %s\n", packet->filename, packet->payload);
+            return true;
+        case DELETE_ORDER:
+            printf("Server said I should delete file %s\n", packet->filename);
             return true;
     }
 }
@@ -127,7 +138,8 @@ int main(int argc, char *argv[])
                     printf("Could not download your file\n");
                 break;
             case COMMAND_DELETE:
-                printf("Delete not implemented yet\n");
+                if (!clientSocket.deleteFile(command.args.fileToDelete))
+                    printf("Could not delete your file\n");
                 break;
             case COMMAND_LIST_CLIENT:
                 printf("List Client not implemented yet\n");
@@ -135,7 +147,7 @@ int main(int argc, char *argv[])
             case COMMAND_LIST_SERVER:
                 printf("List Server not implemented yet\n");
                 break;
-            case COMMAND_GET_SỲNC_DIR:
+            case COMMAND_GET_SYNC_DIR:
                 printf("Get Sync Dir not implemented yet\n");
                 break;
         }

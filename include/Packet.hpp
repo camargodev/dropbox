@@ -16,6 +16,8 @@ const int SIMPLE_MESSAGE = 4;
 const int DOWNLOAD_REQUISITION = 5;
 const int DOWNLOADED_FILE = 6;
 const int FILE_DOWNLOAD_ERROR = 7;
+const int DELETE_REQUISITION = 8;
+const int DELETE_ORDER = 9;
 
 struct Packet {
 
@@ -78,7 +80,16 @@ struct Packet {
         this->numberOfParts = INITIAL_PART;
         this->payloadSize = PAYLOAD_SIZE;
         strcpy(this->payload, payload);
+    }
 
+    Packet(int command,
+           char filename[FILENAME_SIZE]) {
+        this->command = command;
+        strcpy(this->filename, filename);
+        this->currentPartIndex = INITIAL_PART;
+        this->numberOfParts = INITIAL_PART;
+        this->payloadSize = PAYLOAD_SIZE;
+        strcpy(this->payload, "");
     }
 
 

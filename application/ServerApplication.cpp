@@ -17,18 +17,17 @@ int getServerPort(int argc, char *argv[]) {
 }
 
 bool handleReceivedPacket(int socket, Packet* packet) {
-    switch (packet->command) {
+    ConnectedClient connectedClient;
+	switch (packet->command) {
         case UPLOAD_FILE:
             packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
             if (packet->currentPartIndex == packet->numberOfParts) {
                 string content = packetHandler.getFileContent(socket, packet->filename);
                 printf("\nI received file %s with payload:\n%s\n", packet->filename, content.c_str());
-				ConnectedClient connectedClient = connHandler.getConnectedClientBySocket(socket);
+				connectedClient = connHandler.getConnectedClientBySocket(socket);
 				printf("Now I will notify user %s\n", connectedClient.username.c_str());
-				for (auto socket : connectedClient.openSockets) {
-					Packet answer(SIMPLE_MESSAGE);
-					strcpy(answer.payload, ("You have an update on file " + string(packet->filename)).c_str());
-					serverSocket.sendPacketToClient(socket, &answer);
+				for (auto openSocket : connectedClient.openSockets) {
+					serverSocket.sendFileToClient(openSocket, packet->filename);
 				}
                 packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
             }
@@ -38,6 +37,15 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 			printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
 			serverSocket.sendFileToClient(socket, packet->payload);
 			return true;
+
+		case DELETE_REQUISITION:
+			connectedClient = connHandler.getConnectedClientBySocket(socket);	
+			printf("\nI should now delete the file %s on /sync_dir_%s\n", packet->filename, connectedClient.username.c_str());
+			for (auto openSocket : connectedClient.openSockets) {
+				Packet answer(DELETE_ORDER, packet->filename);
+				serverSocket.sendPacketToClient(openSocket, &answer);
+			}
+			break;
         
 		case IDENTIFICATION:
             printf("\nClient %s connected on socket %i\n", packet->payload, socket);

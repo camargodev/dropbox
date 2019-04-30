@@ -41,7 +41,7 @@ void ServerSocketWrapper :: setNumberOfClients(int numOfClients) {
 
 bool ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, char* filename) {
     if (sendFile(DOWNLOADED_FILE, clientConnectionDescriptor, filename)) {
-        printf("File sent with success!\n");
+        printf("File sent with success to connection %i!\n", clientConnectionDescriptor);
         return true;
     }
     printf("Could not send file %s\n", filename);
