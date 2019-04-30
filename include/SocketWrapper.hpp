@@ -40,6 +40,9 @@ class SocketWrapper {
         bool sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
         bool sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile WrappedFile);
 
+    private:
+        int getNumberOfPayloadsForFile(const char* filename);
+
 };
 
 #endif

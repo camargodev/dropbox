@@ -1,8 +1,6 @@
 #include "../include/SocketWrapper.hpp"
 #include "math.h"
 
-int calculateNumberOfPayloads(const char* filename);
-
 SocketDescriptor SocketWrapper :: getSocketDescriptor() {
     return this->socketDescriptor;
 }
@@ -32,7 +30,7 @@ bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescripto
     char currentPayload[PAYLOAD_SIZE] = "";
     int numberOfReadBytes = 0;
     int currentIndex = 1;
-    int numberOfParts = calculateNumberOfPayloads(wrappedFile.filename);
+    int numberOfParts = getNumberOfPayloadsForFile(wrappedFile.filename);
     while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, wrappedFile.file)) > 0) {
         Packet packet(wrappedFile.filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
         packet.command = command;
@@ -44,14 +42,9 @@ bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescripto
     return true;
 }
 
-std::ifstream::pos_type getFilesize(const char* filename)
-{
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-    return in.tellg(); 
-}
 
-int calculateNumberOfPayloads(const char* filename) {
-    int filesize = getFilesize(filename);
+int SocketWrapper :: getNumberOfPayloadsForFile(const char* filename) {
+    int filesize = fileHandler.getFileSize(filename);
     return ceil((float) filesize/PAYLOAD_SIZE);
 }
 

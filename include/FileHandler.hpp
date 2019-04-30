@@ -6,5 +6,11 @@
 class FileHandler {
 public:
     WrappedFile getFileByFilename(char* filename);
+    void deleteFile(char* filename);
+    void createFile(char* filename, char* content);
+    int getFileSize(const char* filename);
+
+private:
+    string path;
 };
 #endif

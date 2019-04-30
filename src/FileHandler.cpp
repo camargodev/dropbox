@@ -8,3 +8,9 @@ WrappedFile FileHandler :: getFileByFilename(char* filename) {
     return wrappedFile;
 }
 
+int FileHandler :: getFileSize(const char* filename) {
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg(); 
+}
+
+
