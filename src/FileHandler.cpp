@@ -13,14 +13,20 @@ int FileHandler :: getFileSize(const char* filename) {
     return in.tellg(); 
 }
 
-vector<string> FileHandler :: getFilenamesInDir(char* dirName) {
+vector<FileForListing> FileHandler :: getFilesInDir(char* dirName) {
     struct dirent *currentFile;
-    vector<string> filenames;
+    vector<FileForListing> filenames;
     DIR *directory = opendir(dirName);
 
     while((currentFile = readdir(directory)) != NULL)
-        if (isFilenameValid(currentFile->d_name) && isFile(currentFile->d_type))
-            filenames.push_back(currentFile->d_name);
+        if (isFilenameValid(currentFile->d_name) && isFile(currentFile->d_type)) {
+            FileForListing fileForListing(currentFile->d_name);
+            // @Cristiano: Need update to complete with real MAC times
+            fileForListing.modificationTime = 0;
+            fileForListing.accessTime = 0;
+            fileForListing.creationTime = 0;
+            filenames.push_back(fileForListing);
+        }
     
     closedir(directory);
 

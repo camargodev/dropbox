@@ -42,6 +42,17 @@ bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescripto
     return true;
 }
 
+bool SocketWrapper :: sendFileList(SocketDescriptor connectionDescriptor, vector<FileForListing> files) {
+    int numberOfFiles = files.size();
+    int currentFileIndex = INITIAL_PART;
+    for (auto file : files) {
+        Packet packet(FILE_LISTING, file.filename, currentFileIndex++, numberOfFiles, 
+            file.modificationTime, file.accessTime, file.creationTime);
+        if (sendPacket(connectionDescriptor, &packet))
+            return false;
+    }
+    return true;
+}
 
 int SocketWrapper :: getNumberOfPayloadsForFile(const char* filename) {
     int filesize = fileHandler.getFileSize(filename);

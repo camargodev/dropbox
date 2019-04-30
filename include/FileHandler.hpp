@@ -11,7 +11,7 @@ public:
     void deleteFile(char* filename);
     void createFile(char* filename, char* content);
     int getFileSize(const char* filename);
-    vector<string> getFilenamesInDir(char* dirName);    
+    vector<FileForListing> getFilesInDir(char* dirName);    
 
 private:
     string path;

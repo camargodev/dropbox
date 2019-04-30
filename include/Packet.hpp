@@ -18,6 +18,7 @@ const int DOWNLOADED_FILE = 6;
 const int ERROR_MESSAGE = 7;
 const int DELETE_REQUISITION = 8;
 const int DELETE_ORDER = 9;
+const int FILE_LISTING = 10;
 
 struct Packet {
 
@@ -27,6 +28,9 @@ struct Packet {
     int numberOfParts;
     int payloadSize;
     char payload[PAYLOAD_SIZE];
+    Time modificationTime;
+    Time accessTime;
+    Time creationTime;
 
     Packet() {}
 
@@ -90,6 +94,22 @@ struct Packet {
         this->numberOfParts = INITIAL_PART;
         this->payloadSize = PAYLOAD_SIZE;
         strcpy(this->payload, "");
+    }
+
+    Packet(int command,
+           char filename[FILENAME_SIZE],
+           int currentPartIndex,
+           int numberOfParts,
+           Time modificationTime,
+           Time accessTime,
+           Time creationTime) {
+        this->command = command;
+        strcpy(this->filename, filename);
+        this->currentPartIndex = currentPartIndex;
+        this->numberOfParts = numberOfParts;
+        this->modificationTime = modificationTime;
+        this->accessTime = accessTime;
+        this->creationTime = creationTime;       
     }
 
 
