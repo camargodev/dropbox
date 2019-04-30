@@ -2,27 +2,17 @@
 #define PACKET_HPP
 
 #include "FileWrapper.hpp"
+#include "Command.hpp"
 #include <string.h>
 
 using namespace std;
 
 const int INITIAL_PART = 0001;
-
 const int PAYLOAD_SIZE = 64;
-const int UPLOAD_FILE = 1;
-const int IDENTIFICATION = 2;
-const int DISCONNECT = 3;
-const int SIMPLE_MESSAGE = 4;
-const int DOWNLOAD_REQUISITION = 5;
-const int DOWNLOADED_FILE = 6;
-const int ERROR_MESSAGE = 7;
-const int DELETE_REQUISITION = 8;
-const int DELETE_ORDER = 9;
-const int FILE_LISTING = 10;
 
 struct Packet {
 
-    int command;
+    Command command;
     char filename[FILENAME_SIZE];
     int currentPartIndex;
     int numberOfParts;
@@ -55,7 +45,7 @@ struct Packet {
         strcpy(this->payload, payload);
     }
 
-    Packet(int command,
+    Packet(Command command,
            int payloadSize,
            char payload[PAYLOAD_SIZE]) {
         this->command = command;
@@ -66,7 +56,7 @@ struct Packet {
         strcpy(this->payload, payload);
     }
 
-    Packet(int command) {
+    Packet(Command command) {
         this->command = command;
         strcpy(this->filename, "");
         this->currentPartIndex = INITIAL_PART;
@@ -75,7 +65,7 @@ struct Packet {
         strcpy(this->payload, "");
     }
 
-    Packet(int command,
+    Packet(Command command,
            char filename[FILENAME_SIZE],
            char payload[PAYLOAD_SIZE]) {
         this->command = command;
@@ -86,7 +76,7 @@ struct Packet {
         strcpy(this->payload, payload);
     }
 
-    Packet(int command,
+    Packet(Command command,
            char filename[FILENAME_SIZE]) {
         this->command = command;
         strcpy(this->filename, filename);
@@ -96,7 +86,7 @@ struct Packet {
         strcpy(this->payload, "");
     }
 
-    Packet(int command,
+    Packet(Command command,
            char filename[FILENAME_SIZE],
            int currentPartIndex,
            int numberOfParts,

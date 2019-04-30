@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "../include/ClientSocketWrapper.hpp"
-#include "../include/InputCommand.hpp"
+#include "../include/InputHandler.hpp"
 #include "../include/PacketHandler.hpp"
 
 ClientSocketWrapper clientSocket;
@@ -23,20 +23,20 @@ ClientInput getServerToConnect(int argc, char *argv[]) {
 int getCommandCode(char* commandName) {
     string strCommand = string(commandName);
     if (strCommand.compare("upload") == 0)
-        return COMMAND_UPLOAD;
+        return INPUT_UPLOAD;
     if (strCommand.compare("exit") == 0)
-        return COMMAND_EXIT;
+        return INPUT_EXIT;
     if (strCommand.compare("download") == 0)
-        return COMMAND_DOWNLOAD;
+        return INPUT_DOWNLOAD;
     if (strCommand.compare("delete") == 0)
-        return COMMAND_DELETE;
+        return INPUT_DELETE;
     if (strCommand.compare("list_client") == 0)
-        return COMMAND_LIST_CLIENT;
+        return INPUT_LIST_CLIENT;
     if (strCommand.compare("list_server") == 0)
-        return COMMAND_LIST_SERVER;
+        return INPUT_LIST_SERVER;
     if (strCommand.compare("get_sync_dir") == 0)
-        return COMMAND_GET_SYNC_DIR;
-    return INVALID_COMMAND;
+        return INPUT_GET_SYNC_DIR;
+    return INVALID_INPUT;
 }
 
 char* getInputFilename() {
@@ -47,25 +47,25 @@ char* getInputFilename() {
     return filename;
 }
 
-Command proccesCommand(char userCommand[COMMAND_SIZE]) {
-    char *commandName = strtok(userCommand, " ");
-    int commandNameSize = strlen(commandName);
-    if (commandName[commandNameSize - 1] == '\n')
-        commandName[commandNameSize - 1] = 0;
-    int commandCode = getCommandCode(commandName);
-    Command command(commandCode);
-    switch (commandCode) {
-        case COMMAND_UPLOAD:
-            command.args.fileToUpload = getInputFilename();
+Input proccesCommand(char userInput[INPUT_SIZE]) {
+    char *inputOperation = strtok(userInput, " ");
+    int inputOperationSize = strlen(inputOperation);
+    if (inputOperation[inputOperationSize - 1] == '\n')
+        inputOperation[inputOperationSize - 1] = 0;
+    int inputCode = getCommandCode(inputOperation);
+    Input input(inputCode);
+    switch (inputCode) {
+        case INPUT_UPLOAD:
+            input.args.fileToUpload = getInputFilename();
             break;
-        case COMMAND_DOWNLOAD:
-            command.args.fileToDownload = getInputFilename();
+        case INPUT_DOWNLOAD:
+            input.args.fileToDownload = getInputFilename();
             break;
-        case COMMAND_DELETE:
-            command.args.fileToDelete = getInputFilename();
+        case INPUT_DELETE:
+            input.args.fileToDelete = getInputFilename();
             break;
     }
-    return command;
+    return input;
 }
 
 bool handleReceivedPacket(Packet* packet) {
@@ -121,33 +121,33 @@ int main(int argc, char *argv[])
 
     bool shouldExit = false;
     while (!shouldExit) {
-        char userCommand[COMMAND_SIZE] = "";
-        fgets(userCommand, COMMAND_SIZE, stdin);
-        Command command = proccesCommand(userCommand);
-        switch (command.commandCode) {
-            case COMMAND_EXIT:
+        char inputCommand[INPUT_SIZE] = "";
+        fgets(inputCommand, INPUT_SIZE, stdin);
+        Input input = proccesCommand(inputCommand);
+        switch (input.inputCode) {
+            case INPUT_EXIT:
                 clientSocket.disconnectFromServer();
                 shouldExit = true;
                 break;
-            case COMMAND_UPLOAD:
-                if (!clientSocket.uploadFileToServer(command.args.fileToUpload))
+            case INPUT_UPLOAD:
+                if (!clientSocket.uploadFileToServer(input.args.fileToUpload))
                     printf("Could not send your file\n");
                 break;
-            case COMMAND_DOWNLOAD:
-                if (!clientSocket.askToDownloadFile(command.args.fileToDownload))
+            case INPUT_DOWNLOAD:
+                if (!clientSocket.askToDownloadFile(input.args.fileToDownload))
                     printf("Could not download your file\n");
                 break;
-            case COMMAND_DELETE:
-                if (!clientSocket.deleteFile(command.args.fileToDelete))
+            case INPUT_DELETE:
+                if (!clientSocket.deleteFile(input.args.fileToDelete))
                     printf("Could not delete your file\n");
                 break;
-            case COMMAND_LIST_CLIENT:
+            case INPUT_LIST_CLIENT:
                 printf("List Client not implemented yet\n");
                 break;
-            case COMMAND_LIST_SERVER:
+            case INPUT_LIST_SERVER:
                 printf("List Server not implemented yet\n");
                 break;
-            case COMMAND_GET_SYNC_DIR:
+            case INPUT_GET_SYNC_DIR:
                 printf("Get Sync Dir not implemented yet\n");
                 break;
         }
