@@ -10,7 +10,7 @@
 #include <netdb.h> 
 #include "Connection.hpp"
 #include "Packet.hpp"
-#include <fstream>
+#include "FileHandler.hpp"
 
 
 using namespace std;
@@ -33,11 +33,12 @@ class SocketWrapper {
 
     protected:
         SocketDescriptor socketDescriptor;
+        FileHandler fileHandler;
 
         sockaddr_in buildDefaultAddress(int port);
         Packet* receivePacket(SocketDescriptor connectionDescriptor);
         bool sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
-        bool sendFile(int command, SocketDescriptor connectionDescriptor, char* filename);
+        bool sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile WrappedFile);
 
 };
 

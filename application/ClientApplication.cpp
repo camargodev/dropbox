@@ -81,8 +81,8 @@ bool handleReceivedPacket(Packet* packet) {
         case SIMPLE_MESSAGE:
             printf("I received a simple message from server: %s\n", packet->payload);
             return true;
-        case FILE_DOWNLOAD_ERROR:
-            printf("Unable to download file %s: %s\n", packet->filename, packet->payload);
+        case ERROR_MESSAGE:
+            printf("Error with file %s: %s\n", packet->filename, packet->payload);
             return true;
         case DELETE_ORDER:
             printf("Server said I should delete file %s\n", packet->filename);

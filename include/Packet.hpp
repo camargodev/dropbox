@@ -1,7 +1,7 @@
 #ifndef PACKET_HPP
 #define PACKET_HPP
 
-#include "File.hpp"
+#include "FileWrapper.hpp"
 #include <string.h>
 
 using namespace std;
@@ -15,7 +15,7 @@ const int DISCONNECT = 3;
 const int SIMPLE_MESSAGE = 4;
 const int DOWNLOAD_REQUISITION = 5;
 const int DOWNLOADED_FILE = 6;
-const int FILE_DOWNLOAD_ERROR = 7;
+const int ERROR_MESSAGE = 7;
 const int DELETE_REQUISITION = 8;
 const int DELETE_ORDER = 9;
 

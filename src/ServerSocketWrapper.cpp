@@ -40,13 +40,18 @@ void ServerSocketWrapper :: setNumberOfClients(int numOfClients) {
 }
 
 bool ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, char* filename) {
-    if (sendFile(DOWNLOADED_FILE, clientConnectionDescriptor, filename)) {
-        printf("File sent with success to connection %i!\n", clientConnectionDescriptor);
-        return true;
+    WrappedFile file = fileHandler.getFileByFilename(filename);
+    if (!file.foundFile) {
+        printf("Could not find file %s\n", filename);
+        char errorMessage[PAYLOAD_SIZE] = "File not found";
+        Packet packet(ERROR_MESSAGE, filename, errorMessage);
+        return false;
     }
-    printf("Could not send file %s\n", filename);
-    char errorMessage[PAYLOAD_SIZE] = "File not found";
-    Packet packet(FILE_DOWNLOAD_ERROR, filename, errorMessage);
-    return sendPacketToClient(clientConnectionDescriptor, &packet);
+    if (!sendFile(DOWNLOADED_FILE, clientConnectionDescriptor, file)) {
+        printf("Error sending file %s\n", filename);
+        return false;
+    }
+    printf("File sent with success to connection %i!\n", clientConnectionDescriptor);
+    return true;
 }
 
