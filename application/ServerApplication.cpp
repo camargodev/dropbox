@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 	serverSocket.listenOnPort(getServerPort(argc, argv));
 
 	if (!serverSocket.openSocket()) {
-		printf("Could not open socket\n");
+		printf("Could not open socket. Try another port\n");
 		return -1;
 	}
 	serverSocket.setNumberOfClients(5);

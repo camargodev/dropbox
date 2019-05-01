@@ -15,6 +15,7 @@ public:
     void printFileList(vector<FileForListing> fileList);
     char* getLocalDirectoryName();
     char* getServerDirectoryNameForUser(string username);
+    void createSyncDir();
 
 private:
     string path;

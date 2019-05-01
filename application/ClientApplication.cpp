@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
         return -1;
 
     if (!clientSocket.connectToServer()) {
-        printf("Host %s:%i not found (is server running?)\n", argv[1], SocketWrapper::DEFAULT_PORT);
+        printf("Host %s:%i not found (is server running?)\n", input.serverHostname, input.serverPort);
         return -1;
     }
 
@@ -132,6 +132,8 @@ int main(int argc, char *argv[])
     }
 
     serverDescriptor = clientSocket.getSocketDescriptor();
+
+    fileHandler.createSyncDir();
 
     pthread_t connectionThread;
     printf("Creating thread to get server answers...\n");
@@ -165,9 +167,9 @@ int main(int argc, char *argv[])
             case INPUT_LIST_SERVER:
                 clientSocket.askForFileList();
                 break;
-            case INPUT_GET_SYNC_DIR:
-                printf("Get Sync Dir not implemented yet\n");
-                break;
+            // case INPUT_GET_SYNC_DIR:
+                // printf("Get Sync Dir not implemented yet\n");
+                // break;
         }
     }
 

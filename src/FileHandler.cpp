@@ -29,10 +29,12 @@ int getLongestFilenameSize(vector<FileForListing> fileList) {
 }
 
 void FileHandler :: deleteFile(char* filename) {
+    // To-Do: @Cristiano
     printf("TO-DO: function to delete (file %s)\n", filename);
 }
 
 void FileHandler :: createFile(char* filename, string content) {
+    // To-Do: @Cristiano
     printf("TO-DO: function to create (file %s)\n", filename);
 }
 
@@ -105,5 +107,9 @@ char* FileHandler :: getServerDirectoryNameForUser(string username) {
     // return (char*) defaultDir;
     return (char*) "./";
 };
+
+void FileHandler :: createSyncDir() {
+    // To-Do: @Cristiano
+}
 
 
