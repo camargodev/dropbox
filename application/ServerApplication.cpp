@@ -17,8 +17,13 @@ int getServerPort(int argc, char *argv[]) {
 	return port;
 }
 
+bool receivedPacketFromTheCurrentOpenSocket(SocketDescriptor originSocket, SocketDescriptor openSocket) {
+	return originSocket == openSocket;
+}
+
 bool handleReceivedPacket(int socket, Packet* packet) {
     ConnectedClient connectedClient;
+	bool shouldKeepExecuting = true;
 	switch (packet->command) {
         case UPLOAD_FILE:
             packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
@@ -28,16 +33,17 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 				connectedClient = connHandler.getConnectedClientBySocket(socket);
 				printf("Now I will notify user %s\n", connectedClient.username.c_str());
 				for (auto openSocket : connectedClient.openSockets) {
-					serverSocket.sendFileToClient(openSocket, packet->filename);
+					if (!receivedPacketFromTheCurrentOpenSocket(socket, openSocket))
+						serverSocket.sendFileToClient(openSocket, packet->filename);
 				}
                 packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
             }
-			return true;
+			break;
 
 		case DOWNLOAD_REQUISITION:
 			printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
 			serverSocket.sendFileToClient(socket, packet->payload);
-			return true;
+			break;
 
 		case DELETE_REQUISITION:
 			connectedClient = connHandler.getConnectedClientBySocket(socket);	
@@ -46,18 +52,19 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 				Packet answer(DELETE_ORDER, packet->filename);
 				serverSocket.sendPacketToClient(openSocket, &answer);
 			}
-			return true;
+			break;
         
 		case IDENTIFICATION:
             printf("\nClient %s connected on socket %i\n", packet->payload, socket);
 			connHandler.addSocketToClient(packet->payload, socket);
-            return true;
+            break;
 
 		case DISCONNECT:
 			connectedClient = connHandler.getConnectedClientBySocket(socket);
 			printf("\nClient %s disconnected on socket %i\n", connectedClient.username.c_str(), socket); 
 			connHandler.removeSocketFromUser(connectedClient.username, socket);
-			return false;
+			shouldKeepExecuting = false;
+			break;
 
 		case LIST_REQUISITION:
 			connectedClient = connHandler.getConnectedClientBySocket(socket);
@@ -65,8 +72,9 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 			vector<FileForListing> filesOnUserDir = fileHandler.getFilesInDir(userDirOnServer);
 			printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
 			serverSocket.sendFileList(socket, filesOnUserDir);
-			return true;
+			break;
     }
+	return shouldKeepExecuting;
 }
 
 void *handleNewConnection(void *voidSocket) {
