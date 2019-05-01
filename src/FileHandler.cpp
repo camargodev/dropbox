@@ -33,6 +33,15 @@ int getLongestFilenameSize(vector<FileForListing> fileList) {
     return maxFilenameSize;
 }
 
+string getFileName(const string& s) {
+   char sep = '/';
+   size_t i = s.rfind(sep, s.length());
+   if (i != string::npos) {
+      return(s.substr(i+1, s.length() - i));
+   }
+   return("");
+}
+
 void FileHandler :: deleteFile(char* filename) {
   int status;
   printf("Enter name of a file you wish to delete\n");
@@ -51,8 +60,20 @@ void FileHandler :: deleteFile(char* filename) {
 }
 
 void FileHandler :: createFile(char* filename, string content) {
-    // To-Do: @Cristiano
-    printf("TO-DO: function to create (file %s)\n", filename);
+    char *fContent = new char[content.length() + 1];
+    std::strcpy(fContent,content.c_str());
+
+    string simpleFileName = getFileName(filename);
+    char *fName = new char[simpleFileName.length() + 1];
+    std::strcpy(fName, simpleFileName.c_str());
+
+    FILE * fp;
+    char path_name[400];
+    sprintf(path_name, "%s/%s", dir_name, fName);
+    printf("%s\n", path_name);
+    fp = fopen (path_name,"w");
+    fprintf(fp, "%s", fContent);
+    fclose (fp);
 }
 
 string getFilenameWithSpaces(char* filename, int filenameTotalSize) {
