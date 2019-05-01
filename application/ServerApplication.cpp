@@ -8,6 +8,7 @@
 PacketHandler packetHandler;
 ConnectionHandler connHandler;
 ServerSocketWrapper serverSocket;
+FileHandler fileHandler;
 
 int getServerPort(int argc, char *argv[]) {
 	int port = SocketWrapper::DEFAULT_PORT;
@@ -53,11 +54,17 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             return true;
 
 		case DISCONNECT:
-			ConnectedClient client = connHandler.getConnectedClientBySocket(socket);
-			printf("\nClient %s disconnected on socket %i\n", client.username.c_str(), socket); 
-			connHandler.removeSocketFromUser(client.username, socket);
+			connectedClient = connHandler.getConnectedClientBySocket(socket);
+			printf("\nClient %s disconnected on socket %i\n", connectedClient.username.c_str(), socket); 
+			connHandler.removeSocketFromUser(connectedClient.username, socket);
 			return false;
 
+		case LIST_REQUISITION:
+			connectedClient = connHandler.getConnectedClientBySocket(socket);
+			char* userDirOnServer = fileHandler.getServerDirectoryNameForUser(connectedClient.username);
+			vector<FileForListing> filesOnUserDir = fileHandler.getFilesInDir(userDirOnServer);
+			printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
+			serverSocket.sendFileList(socket, filesOnUserDir);
     }
 }
 

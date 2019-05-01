@@ -14,7 +14,7 @@ public:
     vector<FileForListing> getFilesInDir(char* dirName);    
     void printFileList(vector<FileForListing> fileList);
     char* getLocalDirectoryName();
-    char* getServerDirectoryNameForUser(char* username);
+    char* getServerDirectoryNameForUser(string username);
 
 private:
     string path;

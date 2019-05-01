@@ -10,6 +10,8 @@ PacketHandler packetHandler;
 SocketDescriptor serverDescriptor;
 FileHandler fileHandler;
 
+vector<FileForListing> receivedFileList;
+
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
         printf("No hostname was supplied. Please connect with ./client <username> <server_ip> <server_port>\n");
@@ -91,6 +93,17 @@ bool handleReceivedPacket(Packet* packet) {
         case DELETE_ORDER:
             printf("Server said I should delete file %s\n", packet->filename);
             return true;
+        case FILE_LISTING:
+            FileForListing receivedFile(packet->filename);
+            receivedFile.modificationTime = packet->modificationTime;
+            receivedFile.accessTime = packet->accessTime;
+            receivedFile.creationTime = packet->creationTime;
+            receivedFileList.push_back(receivedFile);
+            if (packet->currentPartIndex == packet->numberOfParts) {
+                fileHandler.printFileList(receivedFileList);
+                receivedFileList.clear();
+            }
+
     }
 }
 
@@ -149,7 +162,7 @@ int main(int argc, char *argv[])
                 fileHandler.printFileList(fileHandler.getFilesInDir(input.args.directory));
                 break;
             case INPUT_LIST_SERVER:
-                printf("List Server not implemented yet\n");
+                clientSocket.askForFileList();
                 break;
             case INPUT_GET_SYNC_DIR:
                 printf("Get Sync Dir not implemented yet\n");

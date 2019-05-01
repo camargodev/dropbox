@@ -48,7 +48,7 @@ bool SocketWrapper :: sendFileList(SocketDescriptor connectionDescriptor, vector
     for (auto file : files) {
         Packet packet(FILE_LISTING, file.filename, currentFileIndex++, numberOfFiles, 
             file.modificationTime, file.accessTime, file.creationTime);
-        if (sendPacket(connectionDescriptor, &packet))
+        if (!sendPacket(connectionDescriptor, &packet))
             return false;
     }
     return true;

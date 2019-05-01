@@ -1,5 +1,8 @@
 #include "../include/FileHandler.hpp"
 
+char FILENAME_TITLE[FILENAME_SIZE] = "FILENAME";
+int FILENAME_TITLE_SIZE = string(FILENAME_TITLE).size();
+
 WrappedFile FileHandler :: getFileByFilename(char* filename) {
     WrappedFile wrappedFile(filename);
     wrappedFile.file = fopen(filename, "r");
@@ -13,7 +16,7 @@ int FileHandler :: getFileSize(const char* filename) {
 }
 
 int getLongestFilenameSize(vector<FileForListing> fileList) {
-    int maxFilenameSize = 0;
+    int maxFilenameSize = FILENAME_TITLE_SIZE;
     for (auto fileToList : fileList) {
         int filenameSize = string(fileToList.filename).size(); 
         if (filenameSize > maxFilenameSize)
@@ -31,6 +34,8 @@ string getFilenameWithSpaces(char* filename, int filenameTotalSize) {
 
 void FileHandler :: printFileList(vector<FileForListing> fileList) {
     int longestFilenameSize = getLongestFilenameSize(fileList);
+    string title = getFilenameWithSpaces(FILENAME_TITLE, longestFilenameSize);
+    printf("%s | M | A | C\n", title.c_str());
     for (auto file : fileList) {
         string filename = getFilenameWithSpaces(file.filename, longestFilenameSize);
         printf("%s | %i | %i | %i\n", filename.c_str(), file.modificationTime, file.accessTime, file.creationTime);
@@ -78,16 +83,16 @@ char* FileHandler :: getLocalDirectoryName() {
     return (char*) "./input"; 
 }
 
-char* FileHandler :: getServerDirectoryNameForUser(char* username) {
+char* FileHandler :: getServerDirectoryNameForUser(string username) {
     // @Cristiano: essa função pega o nome do diretório do client no servidor (sync_dir_username)
     // Só descomentar quando o sync_dir estiver sendo criado
     
-    // string fullDirName = DEFAULT_DIR + "_" + string(username);
+    // string fullDirName = DEFAULT_DIR + "_" + username;
     // char defaultDir[fullDirName.size() + 1 ];
     // strcpy(defaultDir, fullDirName.c_str());
     // defaultDir[fullDirName.size()] = '\0';
     // return (char*) defaultDir;
-    return (char*) "./input";
+    return (char*) "./";
 };
 
 

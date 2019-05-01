@@ -67,6 +67,11 @@ bool ClientSocketWrapper :: askToDownloadFile(char* filename) {
     return sendPacketToServer(&packet);
 }
 
+bool ClientSocketWrapper :: askForFileList() {
+    Packet packet(LIST_REQUISITION);
+    return sendPacketToServer(&packet);
+}
+
 bool ClientSocketWrapper :: deleteFile(char* filename) {
     Packet packet(DELETE_REQUISITION, filename);
     return sendPacketToServer(&packet);
