@@ -50,11 +50,25 @@ bool ClientSocketWrapper :: disconnectFromServer() {
 }
 
 bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
-    return sendFile(UPLOAD_FILE, this->socketDescriptor, filename);
+    WrappedFile file = fileHandler.getFileByFilename(filename);
+    if (!file.isFound) {
+        printf("Could not find file %s\n", filename);
+        return false;
+    }
+    if (!sendFile(UPLOAD_FILE, this->socketDescriptor, file)) {
+        printf("Error sending file %s\n", filename);
+        return false;
+    }
+    return true;
 }
 
 bool ClientSocketWrapper :: askToDownloadFile(char* filename) {
     Packet packet(DOWNLOAD_REQUISITION, sizeof(filename), filename);
+    return sendPacketToServer(&packet);
+}
+
+bool ClientSocketWrapper :: askForFileList() {
+    Packet packet(LIST_REQUISITION);
     return sendPacketToServer(&packet);
 }
 

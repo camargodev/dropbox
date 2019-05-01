@@ -1,7 +1,6 @@
 #include "../include/SocketWrapper.hpp"
 #include "math.h"
-
-int calculateNumberOfPayloads(const char* filename);
+#include <algorithm>
 
 SocketDescriptor SocketWrapper :: getSocketDescriptor() {
     return this->socketDescriptor;
@@ -28,33 +27,34 @@ bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* 
     return response  >= 0;
 }
 
-bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescriptor, char* filename) {
-    File* file = fopen(filename, "r");
-    if (file == NULL) 
-        return false;
-    char currentPayload[PAYLOAD_SIZE] = "";
-    int numberOfReadBytes = 0;
-    int currentIndex = 1;
-    int numberOfParts = calculateNumberOfPayloads(filename);
-    while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, file)) > 0) {
-        Packet packet(filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
-        packet.command = command;
-        sendPacket(connectionDescriptor, &packet);
-        currentIndex++;
-        memset(currentPayload, 0, PAYLOAD_SIZE);
+bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile wrappedFile) {
+    int numberOfParts = getNumberOfPayloadsForFile(wrappedFile.content.size());
+    for (int i = 0; i < numberOfParts; i++) {
+        int startingPosition = i*PAYLOAD_SIZE;
+        int remainingSize = ((int) wrappedFile.content.size()) - startingPosition; 
+        int sizeToRead = min(PAYLOAD_SIZE, remainingSize);
+        string currentPayload = wrappedFile.content.substr(startingPosition, sizeToRead);
+        Packet packet(command, wrappedFile.filename, (i+1), numberOfParts, sizeToRead, currentPayload);
+        if (!sendPacket(connectionDescriptor, &packet))
+            return false;
     }
     return true;
 }
 
-std::ifstream::pos_type getFilesize(const char* filename)
-{
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-    return in.tellg(); 
+bool SocketWrapper :: sendFileList(SocketDescriptor connectionDescriptor, vector<FileForListing> files) {
+    int numberOfFiles = files.size();
+    int currentFileIndex = INITIAL_PART;
+    for (auto file : files) {
+        Packet packet(FILE_LISTING, file.filename, currentFileIndex++, numberOfFiles, 
+            file.modificationTime, file.accessTime, file.creationTime);
+        if (!sendPacket(connectionDescriptor, &packet))
+            return false;
+    }
+    return true;
 }
 
-int calculateNumberOfPayloads(const char* filename) {
-    int filesize = getFilesize(filename);
-    return ceil((float) filesize/PAYLOAD_SIZE);
+int SocketWrapper :: getNumberOfPayloadsForFile(int fileContentSize) {
+    return ceil((float) fileContentSize/PAYLOAD_SIZE);
 }
 
 void SocketWrapper :: closeConnection(Connection connection) {

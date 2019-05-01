@@ -17,6 +17,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool disconnectFromServer();
         bool askToDownloadFile(char* filename);
         bool deleteFile(char* filename);
+        bool askForFileList();
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);
