@@ -1,5 +1,10 @@
 #include "../include/FileHandler.hpp"
+#include <stdio.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <string.h>
 
+char dir_name[500];
 char FILENAME_TITLE[FILENAME_SIZE] = "FILENAME";
 int FILENAME_TITLE_SIZE = string(FILENAME_TITLE).size();
 
@@ -108,8 +113,29 @@ char* FileHandler :: getServerDirectoryNameForUser(string username) {
     return (char*) "./";
 };
 
-void FileHandler :: createSyncDir() {
+void FileHandler :: createSyncDir(char *username) {
     // To-Do: @Cristiano
-}
-
-
+    //TO-DO: definir nome maximo para o tamanho do diretorio
+    char* home = getenv("HOME");
+    ::sprintf(dir_name, "%s/sync_dir_%s", home, username);
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir (dir_name)) != NULL) {
+       int i = 0;
+        while ((ent = readdir (dir)) != NULL) {
+            if (ent->d_type != DT_DIR) {
+                //200 = max file name
+                char full_name[200];
+                sprintf(full_name, "%s/%s", dir_name, ent->d_name);
+                struct stat st;
+                if (stat(full_name, &st) != 0) {
+                    continue;
+                }
+                i++;
+              }
+            }
+          closedir (dir);
+     } else if (errno == ENOENT) {
+        mkdir(dir_name, 07777);
+    }
+  }

@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
     serverDescriptor = clientSocket.getSocketDescriptor();
 
-    fileHandler.createSyncDir();
+    fileHandler.createSyncDir(argv[1]);
 
     pthread_t connectionThread;
     printf("Creating thread to get server answers...\n");
