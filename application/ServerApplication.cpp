@@ -46,7 +46,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 				Packet answer(DELETE_ORDER, packet->filename);
 				serverSocket.sendPacketToClient(openSocket, &answer);
 			}
-			break;
+			return true;
         
 		case IDENTIFICATION:
             printf("\nClient %s connected on socket %i\n", packet->payload, socket);
@@ -65,6 +65,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 			vector<FileForListing> filesOnUserDir = fileHandler.getFilesInDir(userDirOnServer);
 			printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
 			serverSocket.sendFileList(socket, filesOnUserDir);
+			return true;
     }
 }
 

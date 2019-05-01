@@ -74,7 +74,7 @@ Input proccesCommand(char userInput[INPUT_SIZE]) {
     return input;
 }
 
-bool handleReceivedPacket(Packet* packet) {
+void handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
         case DOWNLOADED_FILE:
             packetHandler.addPacketToReceivedFile(serverDescriptor, packet->filename, packet);
@@ -83,16 +83,16 @@ bool handleReceivedPacket(Packet* packet) {
                 printf("\nI downloaded file %s with payload:\n%s\n", packet->filename, content.c_str());
 				packetHandler.removeFileFromBeingReceivedList(serverDescriptor, packet->filename);
             }
-			return true;
+			break;
         case SIMPLE_MESSAGE:
             printf("I received a simple message from server: %s\n", packet->payload);
-            return true;
+            break;
         case ERROR_MESSAGE:
             printf("Error with file %s: %s\n", packet->filename, packet->payload);
-            return true;
+            break;
         case DELETE_ORDER:
             printf("Server said I should delete file %s\n", packet->filename);
-            return true;
+            break;
         case FILE_LISTING:
             FileForListing receivedFile(packet->filename);
             receivedFile.modificationTime = packet->modificationTime;
@@ -103,7 +103,7 @@ bool handleReceivedPacket(Packet* packet) {
                 fileHandler.printFileList(receivedFileList);
                 receivedFileList.clear();
             }
-
+            break;
     }
 }
 
