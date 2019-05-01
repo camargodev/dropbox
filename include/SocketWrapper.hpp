@@ -42,7 +42,7 @@ class SocketWrapper {
         bool sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile WrappedFile);
 
     private:
-        int getNumberOfPayloadsForFile(const char* filename);
+        int getNumberOfPayloadsForFile(int fileContentSize);
 
 };
 

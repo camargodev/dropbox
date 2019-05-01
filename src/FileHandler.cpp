@@ -4,9 +4,12 @@ char FILENAME_TITLE[FILENAME_SIZE] = "FILENAME";
 int FILENAME_TITLE_SIZE = string(FILENAME_TITLE).size();
 
 WrappedFile FileHandler :: getFileByFilename(char* filename) {
+    ifstream fileStream(filename);
     WrappedFile wrappedFile(filename);
-    wrappedFile.file = fopen(filename, "r");
-    wrappedFile.foundFile = wrappedFile.file != NULL;
+    wrappedFile.isFound = fileStream.good();
+    if(wrappedFile.isFound)
+        wrappedFile.content.assign((istreambuf_iterator<char>(fileStream)),
+                                   (istreambuf_iterator<char>()));
     return wrappedFile;
 }
 

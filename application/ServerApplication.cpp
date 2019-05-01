@@ -17,7 +17,7 @@ int getServerPort(int argc, char *argv[]) {
 	return port;
 }
 
-bool receivedPacketFromTheCurrentOpenSocket(SocketDescriptor originSocket, SocketDescriptor openSocket) {
+bool receivedFromTheCurrentOpenSocket(SocketDescriptor originSocket, SocketDescriptor openSocket) {
 	return originSocket == openSocket;
 }
 
@@ -26,14 +26,14 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 	bool shouldKeepExecuting = true;
 	switch (packet->command) {
         case UPLOAD_FILE:
-            packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
+			packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
             if (packet->currentPartIndex == packet->numberOfParts) {
                 string content = packetHandler.getFileContent(socket, packet->filename);
                 printf("\nI received file %s with payload:\n%s\n", packet->filename, content.c_str());
 				connectedClient = connHandler.getConnectedClientBySocket(socket);
 				printf("Now I will notify user %s\n", connectedClient.username.c_str());
 				for (auto openSocket : connectedClient.openSockets) {
-					if (!receivedPacketFromTheCurrentOpenSocket(socket, openSocket))
+					if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
 						serverSocket.sendFileToClient(openSocket, packet->filename);
 				}
                 packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);

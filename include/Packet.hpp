@@ -46,6 +46,20 @@ struct Packet {
     }
 
     Packet(Command command,
+           char filename[FILENAME_SIZE],
+           int currentPartIndex,
+           int numberOfParts,
+           int payloadSize,
+           string payload) {
+        this->command = command;
+        strcpy(this->filename, filename);
+        this->currentPartIndex = currentPartIndex;
+        this->numberOfParts = numberOfParts;
+        this->payloadSize = payloadSize;
+        strcpy(this->payload, payload.c_str());
+    }
+
+    Packet(Command command,
            int payloadSize,
            char payload[PAYLOAD_SIZE]) {
         this->command = command;

@@ -1,5 +1,6 @@
 #include "../include/SocketWrapper.hpp"
 #include "math.h"
+#include <algorithm>
 
 SocketDescriptor SocketWrapper :: getSocketDescriptor() {
     return this->socketDescriptor;
@@ -27,17 +28,15 @@ bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* 
 }
 
 bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile wrappedFile) {
-    char currentPayload[PAYLOAD_SIZE] = "";
-    int numberOfReadBytes = 0;
-    int currentIndex = 1;
-    int numberOfParts = getNumberOfPayloadsForFile(wrappedFile.filename);
-    while ((numberOfReadBytes = fread(currentPayload, sizeof(char), PAYLOAD_SIZE, wrappedFile.file)) > 0) {
-        Packet packet(wrappedFile.filename, currentIndex, numberOfParts, numberOfReadBytes, currentPayload);
-        packet.command = command;
+    int numberOfParts = getNumberOfPayloadsForFile(wrappedFile.content.size());
+    for (int i = 0; i < numberOfParts; i++) {
+        int startingPosition = i*PAYLOAD_SIZE;
+        int remainingSize = ((int) wrappedFile.content.size()) - startingPosition; 
+        int sizeToRead = min(PAYLOAD_SIZE, remainingSize);
+        string currentPayload = wrappedFile.content.substr(startingPosition, sizeToRead);
+        Packet packet(command, wrappedFile.filename, (i+1), numberOfParts, sizeToRead, currentPayload);
         if (!sendPacket(connectionDescriptor, &packet))
             return false;
-        currentIndex++;
-        memset(currentPayload, 0, PAYLOAD_SIZE);
     }
     return true;
 }
@@ -54,9 +53,8 @@ bool SocketWrapper :: sendFileList(SocketDescriptor connectionDescriptor, vector
     return true;
 }
 
-int SocketWrapper :: getNumberOfPayloadsForFile(const char* filename) {
-    int filesize = fileHandler.getFileSize(filename);
-    return ceil((float) filesize/PAYLOAD_SIZE);
+int SocketWrapper :: getNumberOfPayloadsForFile(int fileContentSize) {
+    return ceil((float) fileContentSize/PAYLOAD_SIZE);
 }
 
 void SocketWrapper :: closeConnection(Connection connection) {

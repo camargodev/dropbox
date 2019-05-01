@@ -41,7 +41,7 @@ void ServerSocketWrapper :: setNumberOfClients(int numOfClients) {
 
 bool ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, char* filename) {
     WrappedFile file = fileHandler.getFileByFilename(filename);
-    if (!file.foundFile) {
+    if (!file.isFound) {
         printf("Could not find file %s\n", filename);
         char errorMessage[PAYLOAD_SIZE] = "File not found";
         Packet packet(ERROR_MESSAGE, filename, errorMessage);
