@@ -34,8 +34,20 @@ int getLongestFilenameSize(vector<FileForListing> fileList) {
 }
 
 void FileHandler :: deleteFile(char* filename) {
-    // To-Do: @Cristiano
-    printf("TO-DO: function to delete (file %s)\n", filename);
+  int status;
+  printf("Enter name of a file you wish to delete\n");
+
+  char path_name[400];
+  sprintf(path_name, "%s/%s", dir_name, filename);
+  status = remove(path_name);
+
+   if (status == 0)
+     printf("%s file deleted successfully.\n", filename);
+   else
+   {
+     printf("Unable to delete the file\n");
+     perror("Following error occurred");
+   }
 }
 
 void FileHandler :: createFile(char* filename, string content) {
