@@ -36,6 +36,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 					if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
 						serverSocket.sendFileToClient(openSocket, packet->filename);
 				}
+				fileHandler.createFile(packet->filename, content);
                 packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
             }
 			break;
@@ -47,7 +48,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 		case DELETE_REQUISITION:
 			connectedClient = connHandler.getConnectedClientBySocket(socket);	
-			printf("\nI should now delete the file %s on /sync_dir_%s\n", packet->filename, connectedClient.username.c_str());
+			fileHandler.deleteFile(packet->filename);
 			for (auto openSocket : connectedClient.openSockets) {
 				Packet answer(DELETE_ORDER, packet->filename);
 				serverSocket.sendPacketToClient(openSocket, &answer);

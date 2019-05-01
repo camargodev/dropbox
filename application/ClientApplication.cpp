@@ -81,6 +81,7 @@ void handleReceivedPacket(Packet* packet) {
             if (packet->currentPartIndex == packet->numberOfParts) {
                 string content = packetHandler.getFileContent(serverDescriptor, packet->filename);
                 printf("\nI downloaded file %s with payload:\n%s\n", packet->filename, content.c_str());
+                fileHandler.createFile(packet->filename, content);
 				packetHandler.removeFileFromBeingReceivedList(serverDescriptor, packet->filename);
             }
 			break;
@@ -91,7 +92,7 @@ void handleReceivedPacket(Packet* packet) {
             printf("Error with file %s: %s\n", packet->filename, packet->payload);
             break;
         case DELETE_ORDER:
-            printf("Server said I should delete file %s\n", packet->filename);
+            fileHandler.deleteFile(packet->filename);
             break;
         case FILE_LISTING:
             FileForListing receivedFile(packet->filename);

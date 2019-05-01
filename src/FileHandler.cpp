@@ -28,6 +28,14 @@ int getLongestFilenameSize(vector<FileForListing> fileList) {
     return maxFilenameSize;
 }
 
+void FileHandler :: deleteFile(char* filename) {
+    printf("TO-DO: function to delete (file %s)\n", filename);
+}
+
+void FileHandler :: createFile(char* filename, string content) {
+    printf("TO-DO: function to create (file %s)\n", filename);
+}
+
 string getFilenameWithSpaces(char* filename, int filenameTotalSize) {
     int filenameSize = string(filename).size();
     string spaces(filenameTotalSize - filenameSize, ' ');

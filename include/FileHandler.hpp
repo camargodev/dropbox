@@ -9,7 +9,7 @@ class FileHandler {
 public:
     WrappedFile getFileByFilename(char* filename);
     void deleteFile(char* filename);
-    void createFile(char* filename, char* content);
+    void createFile(char* filename, string content);
     int getFileSize(const char* filename);
     vector<FileForListing> getFilesInDir(char* dirName);    
     void printFileList(vector<FileForListing> fileList);
