@@ -98,7 +98,7 @@ char* FileHandler :: getLocalDirectoryName() {
     // strcpy(defaultDir, DEFAULT_DIR.c_str());
     // defaultDir[DEFAULT_DIR.size()] = '\0';
     // return (char*) defaultDir;
-    return (char*) "./input"; 
+    return (char*) dir_name;
 }
 
 char* FileHandler :: getServerDirectoryNameForUser(string username) {
