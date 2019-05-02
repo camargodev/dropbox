@@ -63,7 +63,10 @@ void FileHandler :: createFile(char* filename, string content) {
     char *fContent = new char[content.length() + 1];
     std::strcpy(fContent,content.c_str());
 
-    string simpleFileName = getFileName(filename);
+    string simpleFileName = filename;
+    if (strstr(filename, "/") != NULL) {
+      simpleFileName = getFileName(filename);
+    }
     char *fName = new char[simpleFileName.length() + 1];
     std::strcpy(fName, simpleFileName.c_str());
 
