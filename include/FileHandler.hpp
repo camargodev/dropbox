@@ -11,16 +11,20 @@ public:
     void deleteFile(char* filename);
     void createFile(char* filename, string content);
     int getFileSize(const char* filename);
-    vector<FileForListing> getFilesInDir(char* dirName);    
+    vector<FileForListing> getFilesInDir(char* dirName);
     void printFileList(vector<FileForListing> fileList);
     char* getLocalDirectoryName();
     char* getServerDirectoryNameForUser(string username);
     void createSyncDir(char *username);
+    void createServerDir();
+    void openClientDir(char *username);
+    void setDirName(string username);
+    char* downloadFilePath(char *username, char *filename);
 
 private:
     string path;
     const int FILE_TYPE = 8;
-    string DEFAULT_DIR = "sync_dir"; 
+    string DEFAULT_DIR = "sync_dir";
 
     bool isFilenameValid(char* archiveName);
     bool isFile(int archiveType);
