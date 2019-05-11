@@ -27,3 +27,4 @@ clean:
 	rm ${OBJ}/*.o
 	rm client
 	rm server
+	rm test
