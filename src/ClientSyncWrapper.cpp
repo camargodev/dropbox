@@ -11,31 +11,33 @@ using namespace std;
 
 static void displayInotifyEvent(struct inotify_event *i)
 {
-    printf("    wd =%2d; ", i->wd);
+    cout << "====================================" << endl;
+    cout << "wd = " << i->wd << endl;
     if (i->cookie > 0)
-        printf("cookie =%4d; ", i->cookie);
+        cout << "cookie = " << i->cookie << endl;
 
-    printf("mask = ");
-    if (i->mask & IN_ACCESS)        printf("IN_ACCESS ");
-    if (i->mask & IN_ATTRIB)        printf("IN_ATTRIB ");
-    if (i->mask & IN_CLOSE_NOWRITE) printf("IN_CLOSE_NOWRITE ");
-    if (i->mask & IN_CLOSE_WRITE)   printf("IN_CLOSE_WRITE ");
-    if (i->mask & IN_CREATE)        printf("IN_CREATE ");
-    if (i->mask & IN_DELETE)        printf("IN_DELETE ");
-    if (i->mask & IN_DELETE_SELF)   printf("IN_DELETE_SELF ");
-    if (i->mask & IN_IGNORED)       printf("IN_IGNORED ");
-    if (i->mask & IN_ISDIR)         printf("IN_ISDIR ");
-    if (i->mask & IN_MODIFY)        printf("IN_MODIFY ");
-    if (i->mask & IN_MOVE_SELF)     printf("IN_MOVE_SELF ");
-    if (i->mask & IN_MOVED_FROM)    printf("IN_MOVED_FROM ");
-    if (i->mask & IN_MOVED_TO)      printf("IN_MOVED_TO ");
-    if (i->mask & IN_OPEN)          printf("IN_OPEN ");
-    if (i->mask & IN_Q_OVERFLOW)    printf("IN_Q_OVERFLOW ");
-    if (i->mask & IN_UNMOUNT)       printf("IN_UNMOUNT ");
-    printf("\n");
+    cout << "mask = ";
+    if (i->mask & IN_ACCESS)        cout << "IN_ACCESS ";
+    if (i->mask & IN_ATTRIB)        cout << "IN_ATTRIB ";
+    if (i->mask & IN_CLOSE_NOWRITE) cout << "IN_CLOSE_NOWRITE ";
+    if (i->mask & IN_CLOSE_WRITE)   cout << "IN_CLOSE_WRITE ";
+    if (i->mask & IN_CREATE)        cout << "IN_CREATE ";
+    if (i->mask & IN_DELETE)        cout << "IN_DELETE ";
+    if (i->mask & IN_DELETE_SELF)   cout << "IN_DELETE_SELF ";
+    if (i->mask & IN_IGNORED)       cout << "IN_IGNORED ";
+    if (i->mask & IN_ISDIR)         cout << "IN_ISDIR ";
+    if (i->mask & IN_MODIFY)        cout << "IN_MODIFY ";
+    if (i->mask & IN_MOVE_SELF)     cout << "IN_MOVE_SELF ";
+    if (i->mask & IN_MOVED_FROM)    cout << "IN_MOVED_FROM ";
+    if (i->mask & IN_MOVED_TO)      cout << "IN_MOVED_TO ";
+    if (i->mask & IN_OPEN)          cout << "IN_OPEN ";
+    if (i->mask & IN_Q_OVERFLOW)    cout << "IN_Q_OVERFLOW ";
+    if (i->mask & IN_UNMOUNT)       cout << "IN_UNMOUNT ";
+    else count << i->mask;
+    count << endl;
 
     if (i->len > 0)
-        printf("        name = %s\n", i->name);
+        cout << "name = " << i->name << endl;
 }
 void ClientSyncWrapper::checkForUpdates() {
     int fd = inotify_init1(IN_NONBLOCK);
@@ -48,11 +50,8 @@ void ClientSyncWrapper::checkForUpdates() {
         size_read = read(fd, buffer, BUF_LEN);
         if(size_read > 0) {
                 inotify_event* event = (struct inotify_event*) &buffer[i];
-                cout << "Mask: " << event->mask << endl;
-                cout << "Len: " << event->len << endl;
-                cout << "Name: " << event->name << endl;
+                displayInotifyEvent(event);
                 i += event->len + EVENT_SIZE;
-
         }
     }
 
