@@ -8,21 +8,24 @@ using namespace std;
 #define EVENT_SIZE  (sizeof (struct inotify_event))
 
 #define BUF_LEN (EVENT_SIZE + 4096)
-
+int notify_count;
 static void dealWithEvent(struct inotify_event *event){
-    if (event->len != 32){
-        cout << "Mask: " << event->mask << endl;
-        cout << "Len: " << event->len << endl;
-        cout << "Name: " << event->name << endl;
-        string swp = "swp";
-        string name = event->name;
-        if (name.find(swp) != std::string::npos){
-            cout << "eh swp"<<endl;
-        }
-        
+    string name = event->name;
+    if ((event->len == 32) || (name.find(".") == 0)){
+        return;
     }
-
-
+    cout << "========="<<notify_count<<"==========="<<endl;
+    notify_count++;
+    if(event->mask & IN_CLOSE_WRITE){
+        cout << "EDITOU um arquivo" <<endl;
+    }
+    if(event->mask & IN_MOVED_FROM){
+        cout << "DELETOU um arquivo" <<endl;
+    }
+    if(event->mask & IN_MOVED_TO){
+        cout << "CRIOU um arquivo" <<endl;
+    }
+    cout << "Name: " << event->name << endl;
 }
 
 void ClientSyncWrapper::checkForUpdates() {
