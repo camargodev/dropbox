@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 #include <pthread.h>
 #include "../include/ClientSocketWrapper.hpp"
+#include "../include/ClientSyncWrapper.hpp"
 #include "../include/InputHandler.hpp"
 #include "../include/PacketHandler.hpp"
 
@@ -115,6 +117,12 @@ void *handleServerAnswers(void* dummy) {
     }
 }
 
+void *handleNotifyEvents(void* dummy) {
+    
+    ClientSyncWrapper* client = new ClientSyncWrapper();
+    client->checkForUpdates();
+}
+
 int main(int argc, char *argv[])
 {
     ClientInput input = getServerToConnect(argc, argv);
@@ -135,9 +143,10 @@ int main(int argc, char *argv[])
 
     fileHandler.createSyncDir(argv[1]);
 
-    pthread_t connectionThread;
+    pthread_t connectionThread, notifyThread;
     printf("Creating thread to get server answers...\n");
     pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
+    pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
 
     bool shouldExit = false;
     while (!shouldExit) {
