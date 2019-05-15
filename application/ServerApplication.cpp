@@ -31,6 +31,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                 string content = packetHandler.getFileContent(socket, packet->filename);
                 printf("\nI received file %s with payload:\n%s\n", packet->filename, content.c_str());
 				connectedClient = connHandler.getConnectedClientBySocket(socket);
+				fileHandler.setDirName(connectedClient.username);
 				printf("Now I will notify user %s\n", connectedClient.username.c_str());
 				for (auto openSocket : connectedClient.openSockets) {
 					if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
@@ -47,22 +48,23 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 			break;
 
 		case DELETE_REQUISITION:
-			connectedClient = connHandler.getConnectedClientBySocket(socket);	
+			connectedClient = connHandler.getConnectedClientBySocket(socket);
 			fileHandler.deleteFile(packet->filename);
 			for (auto openSocket : connectedClient.openSockets) {
 				Packet answer(DELETE_ORDER, packet->filename);
 				serverSocket.sendPacketToClient(openSocket, &answer);
 			}
 			break;
-        
+
 		case IDENTIFICATION:
             printf("\nClient %s connected on socket %i\n", packet->payload, socket);
+						fileHandler.openClientDir(packet->payload);
 			connHandler.addSocketToClient(packet->payload, socket);
             break;
 
 		case DISCONNECT:
 			connectedClient = connHandler.getConnectedClientBySocket(socket);
-			printf("\nClient %s disconnected on socket %i\n", connectedClient.username.c_str(), socket); 
+			printf("\nClient %s disconnected on socket %i\n", connectedClient.username.c_str(), socket);
 			connHandler.removeSocketFromUser(connectedClient.username, socket);
 			shouldKeepExecuting = false;
 			break;
@@ -84,7 +86,7 @@ void *handleNewConnection(void *voidSocket) {
 	while(shouldKeepExecuting) {
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
 		shouldKeepExecuting = handleReceivedPacket(socket, packet);
-	} 
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -96,6 +98,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 	serverSocket.setNumberOfClients(5);
+	fileHandler.createServerDir();
 
 	while (true) {
 
@@ -107,5 +110,5 @@ int main(int argc, char *argv[]) {
 	}
 
 	serverSocket.closeSocket();
-	return 0; 
+	return 0;
 }

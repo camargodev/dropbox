@@ -10,7 +10,7 @@ bool ServerSocketWrapper :: openSocket() {
     if (this->socketDescriptor == -1)
         return false;
     sockaddr_in address = this->buildAddress(port);
-    return bind(this->socketDescriptor, (struct sockaddr *) &address, sizeof(address)) >= 0;
+    return ::bind(this->socketDescriptor, (struct sockaddr *) &address, sizeof(address)) >= 0;
 }
 
 sockaddr_in ServerSocketWrapper :: buildAddress(int port) {

@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
     serverDescriptor = clientSocket.getSocketDescriptor();
 
-    fileHandler.createSyncDir();
+    fileHandler.createSyncDir(argv[1]);
 
     pthread_t connectionThread;
     printf("Creating thread to get server answers...\n");
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
                     printf("Could not send your file\n");
                 break;
             case INPUT_DOWNLOAD:
-                if (!clientSocket.askToDownloadFile(input.args.fileToDownload))
+                if (!clientSocket.askToDownloadFile(fileHandler.downloadFilePath(argv[1], input.args.fileToDownload)))
                     printf("Could not download your file\n");
                 break;
             case INPUT_DELETE:
