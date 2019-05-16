@@ -44,6 +44,12 @@ string getFileName(const string& s) {
    return("");
 }
 
+void FileHandler :: deleteFileOnServer(string username, char* filename) {
+    char* home = getenv("HOME");
+    ::sprintf(dir_name, "%s/server_dir/sync_dir_%s", home, username.c_str());
+    this->deleteFile(filename);
+}
+
 void FileHandler :: deleteFile(char* filename) {
   int status;
   char path_name[400];
@@ -59,7 +65,14 @@ void FileHandler :: deleteFile(char* filename) {
    }
 }
 
-void FileHandler :: createFile(char* filename, string content) {
+void FileHandler :: createFileOnServer(string username, char* filename, string content, int contentSize) {
+    char* home = getenv("HOME");
+    ::sprintf(dir_name, "%s/server_dir/sync_dir_%s", home, username.c_str());
+    this->createFile(filename, content, contentSize);
+    printf("CFOS = %s\n", dir_name);
+}
+
+void FileHandler :: createFile(char* filename, string content, int contentSize) {
     char *fContent = new char[content.length() + 1];
     std::strcpy(fContent,content.c_str());
 
@@ -75,7 +88,9 @@ void FileHandler :: createFile(char* filename, string content) {
     sprintf(path_name, "%s/%s", dir_name, fName);
     printf("%s\n", path_name);
     fp = fopen (path_name,"w");
-    fprintf(fp, "%s", fContent);
+    printf("CONTENT SIZE IS %i\n", contentSize);
+    fwrite(&(content), 1, contentSize, fp);
+    // fprintf(fp, "%s", fContent);
     fclose (fp);
 }
 
@@ -134,7 +149,7 @@ char* FileHandler :: getServerDirectoryNameForUser(string username) {
     char *uName = new char[username.length() + 1];
     std::strcpy(uName,username.c_str());
     char *home = getenv("HOME");
-    ::sprintf(server_dir, "%s/server_dir/sync_dir_%s", home, uName);
+    ::sprintf(server_dir, "%s/server_dir/sync_dir_%s", home, username.c_str());
     return (char*) server_dir;
 };
 
@@ -221,6 +236,12 @@ void FileHandler :: createSyncDir(char *username) {
  }
 
  char* FileHandler :: downloadFilePath(char *username, char* filename) {
+   char* home = getenv("HOME");
+   ::sprintf(dir_name_with_file, "%s/server_dir/sync_dir_%s/%s", home, username, filename);
+   return (char *) dir_name_with_file;
+ }
+
+char* FileHandler :: getDownloadFilePathForClient(char *username, char* filename) {
    char* home = getenv("HOME");
    ::sprintf(dir_name_with_file, "%s/server_dir/sync_dir_%s/%s", home, username, filename);
    return (char *) dir_name_with_file;

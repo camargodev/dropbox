@@ -14,5 +14,7 @@ const Command DELETE_REQUISITION   = 8;
 const Command DELETE_ORDER         = 9;
 const Command FILE_LISTING         = 10;
 const Command LIST_REQUISITION     = 11;
+const Command GET_SYNC_DIR         = 1000;
+const Command SYNC_FILE            = 2000;
 
 #endif

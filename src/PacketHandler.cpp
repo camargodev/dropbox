@@ -19,6 +19,7 @@ void PacketHandler :: addPacketToExistingFile(int socket, const string& filename
         if (filename.compare(fileBeingReceived.filename) == 0
             && socket == fileBeingReceived.socket) {
             fileBeingReceived.content += packet->payload;
+            fileBeingReceived.contentSize += packet->payloadSize;
         }
 }
 
@@ -34,6 +35,13 @@ string PacketHandler :: getFileContent(int socket, const string& filename) {
         if (filename.compare(fileBeingReceived.filename) == 0
             && socket == fileBeingReceived.socket)
             return fileBeingReceived.content;
+}
+
+int PacketHandler :: getFileContentSize(int socket, const string& filename) {
+    for (auto&& fileBeingReceived : filesBeingReceived)
+        if (filename.compare(fileBeingReceived.filename) == 0
+            && socket == fileBeingReceived.socket)
+            return fileBeingReceived.contentSize;
 }
 
 void PacketHandler :: removeFileFromBeingReceivedList(int socket, const string& filename) {

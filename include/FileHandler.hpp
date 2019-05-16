@@ -9,7 +9,9 @@ class FileHandler {
 public:
     WrappedFile getFileByFilename(char* filename);
     void deleteFile(char* filename);
-    void createFile(char* filename, string content);
+    void createFile(char* filename, string content, int contentSize);
+    void deleteFileOnServer(string username, char* filename);
+    void createFileOnServer(string username, char* filename, string content, int contentSize);
     int getFileSize(const char* filename);
     vector<FileForListing> getFilesInDir(char* dirName);
     void printFileList(vector<FileForListing> fileList);
@@ -20,6 +22,7 @@ public:
     void openClientDir(char *username);
     void setDirName(string username);
     char* downloadFilePath(char *username, char *filename);
+    char* getDownloadFilePathForClient(char *username, char *filename);
 
 private:
     string path;
