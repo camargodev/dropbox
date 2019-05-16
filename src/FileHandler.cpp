@@ -74,14 +74,14 @@ void FileHandler :: createFileOnServer(string username, char* filename, string c
 
 void FileHandler :: createFile(char* filename, string content, int contentSize) {
     char *fContent = new char[content.length() + 1];
-    std::strcpy(fContent,content.c_str());
+    strcpy(fContent,content.c_str());
 
     string simpleFileName = filename;
     if (strstr(filename, "/") != NULL) {
       simpleFileName = getFileName(filename);
     }
     char *fName = new char[simpleFileName.length() + 1];
-    std::strcpy(fName, simpleFileName.c_str());
+    strcpy(fName, simpleFileName.c_str());
 
     FILE * fp;
     char path_name[400];
@@ -147,7 +147,7 @@ char* FileHandler :: getLocalDirectoryName() {
 
 char* FileHandler :: getServerDirectoryNameForUser(string username) {
     char *uName = new char[username.length() + 1];
-    std::strcpy(uName,username.c_str());
+    strcpy(uName,username.c_str());
     char *home = getenv("HOME");
     ::sprintf(server_dir, "%s/server_dir/sync_dir_%s", home, username.c_str());
     return (char*) server_dir;
@@ -228,9 +228,12 @@ void FileHandler :: createSyncDir(char *username) {
     }
   }
 
+ char* FileHandler :: getDirName(){
+     return dir_name;
+ }
  void FileHandler :: setDirName(string username) {
     char *uName = new char[username.length() + 1];
-    std::strcpy(uName,username.c_str());
+    strcpy(uName,username.c_str());
     char* home = getenv("HOME");
     ::sprintf(dir_name, "%s/server_dir/sync_dir_%s", home, uName);
  }

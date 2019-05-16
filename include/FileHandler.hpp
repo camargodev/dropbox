@@ -18,6 +18,7 @@ public:
     char* getLocalDirectoryName();
     char* getServerDirectoryNameForUser(string username);
     void createSyncDir(char *username);
+    char* getDirName();
     void createServerDir();
     void openClientDir(char *username);
     void setDirName(string username);

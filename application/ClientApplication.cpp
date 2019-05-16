@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include <pthread.h>
+#include <sys/inotify.h>
+#include <string>
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/ClientSyncWrapper.hpp"
 #include "../include/InputHandler.hpp"
@@ -51,6 +53,7 @@ char* getNextValueOnInput() {
     int filenameSize = strlen(filename);
     if (filename[filenameSize - 1] == '\n')
         filename[filenameSize - 1] = 0;
+    cout << filename <<endl;
     return filename;
 }
 
@@ -146,11 +149,74 @@ void *handleServerAnswers(void* dummy) {
         handleReceivedPacket(packet);
     }
 }
+using namespace std;
+
+#define EVENT_SIZE  (sizeof (struct inotify_event))
+
+#define BUF_LEN (EVENT_SIZE + 4096)
+int notify_count = 0;
+char* nome_usuario;
+void dealWithEvent(struct inotify_event *event, char* path){
+
+    string name = event->name;
+    if ((event->len == 32) || (name.find(".") == 0)){
+        return;
+    }
+    cout << "========="<<notify_count<<"==========="<<endl;
+    notify_count++;
+    
+    char path_file[500] = {0};
+    strcat(path_file, path);
+    strcat(path_file, "/");
+    strcat(path_file, event->name);
+    cout << path_file<< endl;
+
+    if(event->mask & IN_CLOSE_WRITE){
+        cout << "EDITOU um arquivo" <<endl;
+        if (!clientSocket.uploadFileToServer(path_file))
+            printf("Could not send your file\n");
+
+    }
+    if(event->mask & IN_MOVED_FROM){
+        cout << "DELETOU um arquivo" <<endl;
+        if (!clientSocket.deleteFile(event->name))
+            printf("Could not delete your file\n");
+    }
+    if(event->mask & IN_MOVED_TO){
+        cout << "CRIOU um arquivo" <<endl;
+        if (!clientSocket.uploadFileToServer(path_file))
+            printf("Could not send your file\n");
+    }
+    cout << "Name: " << event->name << endl;
+}
+
+void checkForUpdates() {
+    char* path_name = fileHandler.getDirName();
+    cout << path_name <<endl;
+    int fd = inotify_init1(IN_NONBLOCK);
+    int wd = inotify_add_watch(fd, path_name, IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
+    char *buffer[BUF_LEN];
+
+    int size_read, i;
+    while(true) {
+        i = 0;
+        size_read = read(fd, buffer, BUF_LEN);
+        if(size_read > 0) {
+
+            inotify_event* event = (struct inotify_event*) buffer;
+            dealWithEvent(event, path_name);
+            i += event->len + EVENT_SIZE;
+
+        }
+    }
+
+//    cout << "Watcher: " << watcher << endl;
+}
 
 void *handleNotifyEvents(void* dummy) {
+ 
+    checkForUpdates();
     
-    ClientSyncWrapper* client = new ClientSyncWrapper();
-    client->checkForUpdates();
 }
 
 int main(int argc, char *argv[])
@@ -174,6 +240,7 @@ int main(int argc, char *argv[])
 
     fileHandler.createSyncDir(argv[1]);
     clientSocket.getSyncDir();
+    nome_usuario = argv[1];
 
     pthread_t connectionThread, notifyThread;
     printf("Creating thread to get server answers...\n");
