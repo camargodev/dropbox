@@ -27,16 +27,37 @@ bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* 
     return response  >= 0;
 }
 
+std::ifstream::pos_type getFilesize(const char* filename)
+{
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg(); 
+}
+
+int calculateNumberOfPayloads(const char* filename) {
+    int filesize = getFilesize(filename);
+    return ceil((float) filesize/PAYLOAD_SIZE);
+}
+
 bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile wrappedFile) {
-    int numberOfParts = getNumberOfPayloadsForFile(wrappedFile.content.size());
-    for (int i = 0; i < numberOfParts; i++) {
-        int startingPosition = i*PAYLOAD_SIZE;
-        int remainingSize = ((int) wrappedFile.content.size()) - startingPosition; 
-        int sizeToRead = min(PAYLOAD_SIZE, remainingSize);
-        string currentPayload = wrappedFile.content.substr(startingPosition, sizeToRead);
-        Packet packet(command, wrappedFile.filename, (i+1), numberOfParts, sizeToRead, currentPayload);
-        if (!sendPacket(connectionDescriptor, &packet))
+    File* file = fopen(wrappedFile.filename, "r");
+    if (file == NULL) 
+        return false;
+    char currentPayload[PAYLOAD_SIZE] = "";
+    int numberOfReadBytes = 0;
+    int currentIndex = 1;
+    int numberOfParts = calculateNumberOfPayloads(wrappedFile.filename);
+    Packet currentPacket;
+    while ((numberOfReadBytes = fread(&(currentPacket.payload), sizeof(char), PAYLOAD_SIZE, file)) > 0) {
+        currentPacket.command = command;
+        strcpy(currentPacket.filename, wrappedFile.filename);
+        currentPacket.currentPartIndex = currentIndex;
+        currentPacket.numberOfParts = numberOfParts;
+        currentPacket.payloadSize = numberOfReadBytes;
+        // Packet packet(command, wrappedFile.filename, currentIndex, numberOfParts, numberOfReadBytes);
+        if (!sendPacket(connectionDescriptor, &currentPacket))
             return false;
+        currentIndex++;
+        memset(currentPayload, 0, PAYLOAD_SIZE);
     }
     return true;
 }
@@ -46,6 +67,18 @@ bool SocketWrapper :: sendFileList(SocketDescriptor connectionDescriptor, vector
     int currentFileIndex = INITIAL_PART;
     for (auto file : files) {
         Packet packet(FILE_LISTING, file.filename, currentFileIndex++, numberOfFiles, 
+            file.modificationTime, file.accessTime, file.creationTime);
+        if (!sendPacket(connectionDescriptor, &packet))
+            return false;
+    }
+    return true;
+}
+
+bool SocketWrapper :: sendFileListForSyncDir(SocketDescriptor connectionDescriptor, vector<FileForListing> files) {
+    int numberOfFiles = files.size();
+    int currentFileIndex = INITIAL_PART;
+    for (auto file : files) {
+        Packet packet(SYNC_FILE, file.filename, currentFileIndex++, numberOfFiles, 
             file.modificationTime, file.accessTime, file.creationTime);
         if (!sendPacket(connectionDescriptor, &packet))
             return false;

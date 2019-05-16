@@ -21,25 +21,70 @@ bool receivedFromTheCurrentOpenSocket(SocketDescriptor originSocket, SocketDescr
 	return originSocket == openSocket;
 }
 
+string getCorrectFilename(const string& s, string username) { 
+	char* home = getenv("HOME");    
+   char sep = '/';
+   size_t i = s.rfind(sep, s.length());
+   if (i != string::npos) {
+      string f = s.substr(i+1, s.length() - i);
+	  char filename[300];  
+	  ::sprintf(filename, "%s/server_dir/sync_dir_%s/%s", home, username.c_str(), f.c_str()); 
+	 return filename;
+   }
+   return("");
+}
+
+void handleUploadedFile(string username, Packet* packet) {
+	// packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
+	string filenameToSave = getCorrectFilename(packet->filename, username);
+	File* file = fopen(filenameToSave.c_str(), "a"); 
+	fwrite(&(packet->payload), 1, packet->payloadSize, file);
+	fclose(file);
+}
+
 bool handleReceivedPacket(int socket, Packet* packet) {
     ConnectedClient connectedClient;
 	bool shouldKeepExecuting = true;
+	string filenameToSave;
 	switch (packet->command) {
+		case GET_SYNC_DIR: {
+			connectedClient = connHandler.getConnectedClientBySocket(socket);
+			printf("Client %s requested sync dir\n", connectedClient.username.c_str());
+			char* userDirectoryOnServer = fileHandler.getServerDirectoryNameForUser(connectedClient.username);
+			vector<FileForListing> filesOnUserDirectory = fileHandler.getFilesInDir(userDirectoryOnServer);
+			printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
+			serverSocket.sendFileListForSyncDir(socket, filesOnUserDirectory);
+			}
+			break;
+
         case UPLOAD_FILE:
-			packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
-            if (packet->currentPartIndex == packet->numberOfParts) {
-                string content = packetHandler.getFileContent(socket, packet->filename);
-                printf("\nI received file %s with payload:\n%s\n", packet->filename, content.c_str());
-				connectedClient = connHandler.getConnectedClientBySocket(socket);
-				fileHandler.setDirName(connectedClient.username);
-				printf("Now I will notify user %s\n", connectedClient.username.c_str());
-				for (auto openSocket : connectedClient.openSockets) {
-					if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
-						serverSocket.sendFileToClient(openSocket, packet->filename);
-				}
-				fileHandler.createFile(packet->filename, content);
-                packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
-            }
+			connectedClient = connHandler.getConnectedClientBySocket(socket);
+			handleUploadedFile(connectedClient.username, packet);
+			// packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
+			// filenameToSave = getCorrectFilename(packet->filename, connectedClient.username);
+			// printf("FILENAME IS %s\n", filenameToSave.c_str());
+			// File* file = fopen(filenameToSave.c_str(), "a"); 
+			// fwrite(&(packet->payload), 1, packet->payloadSize, file);
+			// fclose(file);
+            // if (packet->currentPartIndex == packet->numberOfParts) {
+                // string content = packetHandler.getFileContent(socket, packet->filename);
+                // int contentSize = packetHandler.getFileContentSize(socket, packet->filename);
+                // printf("\nI received file %s\n", packet->filename);
+				// connectedClient = connHandler.getConnectedClientBySocket(socket);
+				// fileHandler.setDirName(connectedClient.username);
+				// printf("Now I will notify user %s\n", connectedClient.username.c_str());
+				// for (auto openSocket : connectedClient.openSockets) {
+				// 	if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
+				// 		serverSocket.sendFileToClient(openSocket, packet->filename);
+				// }
+				// // fileHandler.createFileOnServer(connectedClient.username, packet->filename, content, contentSize);
+				// string filenameOk = getCorrectFilename(packet->filename, connectedClient.username);
+                // File* file = fopen(filenameOk.c_str(), "w"); 
+				// printf("FILENAME IS %s\n", filenameOk.c_str());
+				// fwrite(&(content), 1, contentSize, file);
+				// fclose(file);
+        		// packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
+            // }
 			break;
 
 		case DOWNLOAD_REQUISITION:
@@ -49,7 +94,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 		case DELETE_REQUISITION:
 			connectedClient = connHandler.getConnectedClientBySocket(socket);
-			fileHandler.deleteFile(packet->filename);
+			fileHandler.deleteFileOnServer(connectedClient.username, packet->filename);
 			for (auto openSocket : connectedClient.openSockets) {
 				Packet answer(DELETE_ORDER, packet->filename);
 				serverSocket.sendPacketToClient(openSocket, &answer);
@@ -58,7 +103,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 		case IDENTIFICATION:
             printf("\nClient %s connected on socket %i\n", packet->payload, socket);
-						fileHandler.openClientDir(packet->payload);
+			fileHandler.openClientDir(packet->payload);
 			connHandler.addSocketToClient(packet->payload, socket);
             break;
 

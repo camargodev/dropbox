@@ -14,6 +14,8 @@ FileHandler fileHandler;
 
 vector<FileForListing> receivedFileList;
 
+char* clientUsername;
+
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
         printf("No hostname was supplied. Please connect with ./client <username> <server_ip> <server_port>\n");
@@ -76,16 +78,44 @@ Input proccesCommand(char userInput[INPUT_SIZE]) {
     return input;
 }
 
+string getCorrectFilename(const string& s) { 
+	char* home = getenv("HOME");    
+   char sep = '/';
+   size_t i = s.rfind(sep, s.length());
+   if (i != string::npos) {
+      string f = s.substr(i+1, s.length() - i);
+	  char filename[300];  
+	  ::sprintf(filename, "%s/sync_dir/%s", home, f.c_str()); 
+	 return filename;
+   }
+   return("");
+}
+
+void handleDownloadedFile(Packet* packet) {
+	// packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
+	string filenameToSave = getCorrectFilename(packet->filename);
+	File* file = fopen(filenameToSave.c_str(), "a"); 
+	fwrite(&(packet->payload), 1, packet->payloadSize, file);
+	fclose(file);
+}
+
 void handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
+        case SYNC_FILE:
+            printf("I must download file %s\n", packet->filename);
+            if (!clientSocket.askToDownloadFile(fileHandler.getDownloadFilePathForClient(clientUsername, packet->filename)))
+                printf("Could not download your file\n");
+            break;
         case DOWNLOADED_FILE:
-            packetHandler.addPacketToReceivedFile(serverDescriptor, packet->filename, packet);
-            if (packet->currentPartIndex == packet->numberOfParts) {
-                string content = packetHandler.getFileContent(serverDescriptor, packet->filename);
-                printf("\nI downloaded file %s with payload:\n%s\n", packet->filename, content.c_str());
-                fileHandler.createFile(packet->filename, content);
-				packetHandler.removeFileFromBeingReceivedList(serverDescriptor, packet->filename);
-            }
+            handleDownloadedFile(packet);
+            // packetHandler.addPacketToReceivedFile(serverDescriptor, packet->filename, packet);
+            // if (packet->currentPartIndex == packet->numberOfParts) {
+            //     string content = packetHandler.getFileContent(serverDescriptor, packet->filename);
+            //     int contentSize = packetHandler.getFileContentSize(serverDescriptor, packet->filename);
+            //     printf("\nI downloaded file %s with payload:\n", packet->filename);
+            //     // fileHandler.createFile(packet->filename, content, contentSize);
+			// 	packetHandler.removeFileFromBeingReceivedList(serverDescriptor, packet->filename);
+            // }
 			break;
         case SIMPLE_MESSAGE:
             printf("I received a simple message from server: %s\n", packet->payload);
@@ -138,10 +168,12 @@ int main(int argc, char *argv[])
     if (!clientSocket.identifyUsername(input.username)) {
         printf("Could not send your username\n");
     }
+    clientUsername = input.username;
 
     serverDescriptor = clientSocket.getSocketDescriptor();
 
     fileHandler.createSyncDir(argv[1]);
+    clientSocket.getSyncDir();
 
     pthread_t connectionThread, notifyThread;
     printf("Creating thread to get server answers...\n");

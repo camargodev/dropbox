@@ -18,6 +18,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool askToDownloadFile(char* filename);
         bool deleteFile(char* filename);
         bool askForFileList();
+        void getSyncDir();
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);

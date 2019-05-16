@@ -31,6 +31,7 @@ class SocketWrapper {
         SocketDescriptor getSocketDescriptor();
         void closeSocket();
         bool sendFileList(SocketDescriptor connectionDescriptor, vector<FileForListing> files);
+        bool sendFileListForSyncDir(SocketDescriptor connectionDescriptor, vector<FileForListing> files);
 
     protected:
         SocketDescriptor socketDescriptor;

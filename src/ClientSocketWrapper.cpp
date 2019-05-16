@@ -76,3 +76,8 @@ bool ClientSocketWrapper :: deleteFile(char* filename) {
     Packet packet(DELETE_REQUISITION, filename);
     return sendPacketToServer(&packet);
 }
+
+void ClientSocketWrapper :: getSyncDir() {
+    Packet packet(GET_SYNC_DIR);
+    sendPacketToServer(&packet);
+}
