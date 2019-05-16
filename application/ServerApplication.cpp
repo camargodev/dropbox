@@ -60,31 +60,31 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         case UPLOAD_FILE:
 			connectedClient = connHandler.getConnectedClientBySocket(socket);
 			handleUploadedFile(connectedClient.username, packet);
-			// packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
+			packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
 			// filenameToSave = getCorrectFilename(packet->filename, connectedClient.username);
 			// printf("FILENAME IS %s\n", filenameToSave.c_str());
 			// File* file = fopen(filenameToSave.c_str(), "a"); 
 			// fwrite(&(packet->payload), 1, packet->payloadSize, file);
 			// fclose(file);
-            // if (packet->currentPartIndex == packet->numberOfParts) {
+            if (packet->currentPartIndex == packet->numberOfParts) {
                 // string content = packetHandler.getFileContent(socket, packet->filename);
                 // int contentSize = packetHandler.getFileContentSize(socket, packet->filename);
                 // printf("\nI received file %s\n", packet->filename);
 				// connectedClient = connHandler.getConnectedClientBySocket(socket);
 				// fileHandler.setDirName(connectedClient.username);
 				// printf("Now I will notify user %s\n", connectedClient.username.c_str());
-				// for (auto openSocket : connectedClient.openSockets) {
+				for (auto openSocket : connectedClient.openSockets) {
 				// 	if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
-				// 		serverSocket.sendFileToClient(openSocket, packet->filename);
-				// }
+				 		serverSocket.sendFileToClient(openSocket, packet->filename);
+				 }
 				// // fileHandler.createFileOnServer(connectedClient.username, packet->filename, content, contentSize);
 				// string filenameOk = getCorrectFilename(packet->filename, connectedClient.username);
                 // File* file = fopen(filenameOk.c_str(), "w"); 
 				// printf("FILENAME IS %s\n", filenameOk.c_str());
 				// fwrite(&(content), 1, contentSize, file);
 				// fclose(file);
-        		// packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
-            // }
+        		packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
+            }
 			break;
 
 		case DOWNLOAD_REQUISITION:
