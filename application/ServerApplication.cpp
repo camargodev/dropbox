@@ -4,11 +4,12 @@
 #include "../include/ServerSocketWrapper.hpp"
 #include "../include/PacketHandler.hpp"
 #include "../include/ConnectionHandler.hpp"
+#include "../include/ServerFileHandler.hpp"
 
 PacketHandler packetHandler;
 ConnectionHandler connHandler;
 ServerSocketWrapper serverSocket;
-FileHandler fileHandler;
+ServerFileHandler fileHandler;
 
 int getServerPort(int argc, char *argv[]) {
 	int port = SocketWrapper::DEFAULT_PORT;
@@ -50,8 +51,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 	switch (packet->command) {
 		case GET_SYNC_DIR: {
 			printf("Client %s requested sync dir\n", connectedClient.username.c_str());
-			char* userDirectoryOnServer = fileHandler.getServerDirectoryNameForUser(connectedClient.username);
-			vector<FileForListing> filesOnUserDirectory = fileHandler.getFilesInDir(userDirectoryOnServer);
+			vector<FileForListing> filesOnUserDirectory = fileHandler.getFiles(connectedClient.username.c_str());
 			printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
 			serverSocket.sendFileListForSyncDir(socket, filesOnUserDirectory);
 			}
@@ -70,15 +70,14 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                 // int contentSize = packetHandler.getFileContentSize(socket, packet->filename);
                 // printf("\nI received file %s\n", packet->filename);
 				// connectedClient = connHandler.getConnectedClientBySocket(socket);
-				// fileHandler.setDirName(connectedClient.username);
 				// printf("Now I will notify user %s\n", connectedClient.username.c_str());
 				for (auto openSocket : connectedClient.openSockets) {
                     // if (!receivedFromTheCurrentOpenSocket(socket, openSocket)) {
-                    WrappedFile file = fileHandler.getFile(connectedClient.username, packet->filename)
+                    WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename)
                     serverSocket.sendFileToClient(openSocket, file);
                     // }
 				 }
-				// // fileHandler.createFileOnServer(connectedClient.username, packet->filename, content, contentSize);
+				// // fileHandler.createFile(connectedClient.username.c_str(), packet->filename, content, contentSize);
 				// string filenameOk = getCorrectFilename(packet->filename, connectedClient.username);
                 // File* file = fopen(filenameOk.c_str(), "w"); 
 				// printf("FILENAME IS %s\n", filenameOk.c_str());
@@ -91,12 +90,12 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 		case DOWNLOAD_REQUISITION:
 			printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
 
-			WrappedFile file = fileHandler.getFile(connectedClient.username, packet->payload);
+			WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->payload);
 			serverSocket.sendFileToClient(socket, file);
 			break;
 
 		case DELETE_REQUISITION:
-			fileHandler.deleteFileOnServer(connectedClient.username, packet->filename);
+			fileHandler.deleteFile(connectedClient.username.c_str(), packet->filename);
 			for (auto openSocket : connectedClient.openSockets) {
 				Packet answer(DELETE_ORDER, packet->filename);
 				serverSocket.sendPacketToClient(openSocket, &answer);
@@ -105,7 +104,6 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 		case IDENTIFICATION:
             printf("\nClient %s connected on socket %i\n", packet->payload, socket);
-			fileHandler.openClientDir(packet->payload);
 			connHandler.addSocketToClient(packet->payload, socket);
             break;
 
@@ -116,8 +114,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 			break;
 
 		case LIST_REQUISITION:
-			char* userDirOnServer = fileHandler.getServerDirectoryNameForUser(connectedClient.username);
-			vector<FileForListing> filesOnUserDir = fileHandler.getFilesInDir(userDirOnServer);
+			vector<FileForListing> filesOnUserDir = fileHandler.getFiles(connectedClient.username.c_str());
 			printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
 			serverSocket.sendFileList(socket, filesOnUserDir);
 			break;
@@ -143,7 +140,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 	serverSocket.setNumberOfClients(5);
-	fileHandler.createServerDir();
+	fileHandler.createDir();
 
 	while (true) {
 
