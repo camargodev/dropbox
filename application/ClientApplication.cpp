@@ -1,21 +1,20 @@
-#include <stdio.h>
+#include <sys/inotify.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <iostream>
-#include <pthread.h>
-#include <sys/inotify.h>
+#include <stdio.h>
 #include <string>
+
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/ClientSyncWrapper.hpp"
 #include "../include/InputHandler.hpp"
 #include "../include/PacketHandler.hpp"
 
+vector<FileForListing> receivedFileList;
+SocketDescriptor serverDescriptor;
 ClientSocketWrapper clientSocket;
 PacketHandler packetHandler;
-SocketDescriptor serverDescriptor;
 FileHandler fileHandler;
-
-vector<FileForListing> receivedFileList;
-
 char* clientUsername;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
@@ -75,7 +74,7 @@ Input proccesCommand(char userInput[INPUT_SIZE]) {
             input.args.fileToDelete = getNextValueOnInput();
             break;
         case INPUT_LIST_CLIENT:
-            input.args.directory = fileHandler.getLocalDirectoryName();
+            input.args.directory = fileHandler.getDirname();
             break;
     }
     return input;
@@ -106,7 +105,7 @@ void handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
         case SYNC_FILE:
             printf("I must download file %s\n", packet->filename);
-            if (!clientSocket.askToDownloadFile(fileHandler.getDownloadFilePathForClient(clientUsername, packet->filename)))
+            if (!clientSocket.askToDownloadFile(packet->filename))
                 printf("Could not download your file\n");
             break;
         case DOWNLOADED_FILE:
@@ -191,7 +190,7 @@ void dealWithEvent(struct inotify_event *event, char* path){
 }
 
 void checkForUpdates() {
-    char* path_name = fileHandler.getDirName();
+    char* path_name = fileHandler.getDirpath();
     cout << path_name <<endl;
     int fd = inotify_init1(IN_NONBLOCK);
     int wd = inotify_add_watch(fd, path_name, IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
@@ -234,13 +233,12 @@ int main(int argc, char *argv[])
     if (!clientSocket.identifyUsername(input.username)) {
         printf("Could not send your username\n");
     }
-    clientUsername = input.username;
 
+    clientUsername = input.username;
     serverDescriptor = clientSocket.getSocketDescriptor();
 
-    fileHandler.createSyncDir(argv[1]);
+    fileHandler.createDir();
     clientSocket.getSyncDir();
-    nome_usuario = argv[1];
 
     pthread_t connectionThread, notifyThread;
     printf("Creating thread to get server answers...\n");
@@ -262,7 +260,7 @@ int main(int argc, char *argv[])
                     printf("Could not send your file\n");
                 break;
             case INPUT_DOWNLOAD:
-                if (!clientSocket.askToDownloadFile(fileHandler.downloadFilePath(argv[1], input.args.fileToDownload)))
+                if (!clientSocket.askToDownloadFile(input.args.fileToDownload))
                     printf("Could not download your file\n");
                 break;
             case INPUT_DELETE:
@@ -270,18 +268,17 @@ int main(int argc, char *argv[])
                     printf("Could not delete your file\n");
                 break;
             case INPUT_LIST_CLIENT:
-                fileHandler.printFileList(fileHandler.getFilesInDir(input.args.directory));
+                fileHandler.printFileList(fileHandler.getFiles());
                 break;
             case INPUT_LIST_SERVER:
                 clientSocket.askForFileList();
                 break;
-            // case INPUT_GET_SYNC_DIR:
-                // printf("Get Sync Dir not implemented yet\n");
-                // break;
+             case INPUT_GET_SYNC_DIR:
+                 fileHandler.createDir();
+                 break;
         }
     }
 
     clientSocket.closeSocket();
-    
     return 0;
 }
