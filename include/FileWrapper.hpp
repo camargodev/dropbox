@@ -3,13 +3,9 @@
 
 #include <fstream>
 #include <string.h>
+#include <sys/stat.h>
 
-using namespace std;
-
-// using File = ifstream;
-// @Cristiano: need to update to real time type
-using Time = int;
-
+using Time = time_t;
 const int FILENAME_SIZE = 80;
 
 struct WrappedFile {

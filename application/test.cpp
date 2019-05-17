@@ -1,8 +1,11 @@
-#include "../include/ClientSyncWrapper.hpp"
+#include <sys/stat.h>
+#include <iostream>
+
+using namespace std;
 
 int main() {
-    ClientSyncWrapper* client = new ClientSyncWrapper();
-
-    client->checkForUpdates();
-    return 0;
+    if(mkdir("teste", 07777) == 0)
+        cout << "OK\n";
+    else
+        cout << "NOT OK\n";
 }
