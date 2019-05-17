@@ -6,31 +6,32 @@
 #include "FileWrapper.hpp"
 
 class FileHandler {
-public:
-    WrappedFile getFileByFilename(char* filename);
-    void deleteFile(char* filename);
-    void createFile(char* filename, string content, int contentSize);
-    void deleteFileOnServer(string username, char* filename);
-    void createFileOnServer(string username, char* filename, string content, int contentSize);
-    int getFileSize(const char* filename);
-    vector<FileForListing> getFilesInDir(char* dirName);
-    void printFileList(vector<FileForListing> fileList);
-    char* getLocalDirectoryName();
-    char* getServerDirectoryNameForUser(string username);
-    void createSyncDir(char *username);
-    char* getDirName();
-    void createServerDir();
-    void openClientDir(char *username);
-    void setDirName(string username);
-    char* downloadFilePath(char *username, char *filename);
-    char* getDownloadFilePathForClient(char *username, char *filename);
+    public:
+        FileHandler();
+        void printFileList(vector<FileForListing> fileList);
+        char* getFilename(const char* pathname);
+        char* getDirpath();
+        char* getDirname();
+        void createDir();
 
-private:
-    string path;
-    const int FILE_TYPE = 8;
-    string DEFAULT_DIR = "sync_dir";
+        void createFile(const char* pathname, string content, int size);
+        WrappedFile getFile(const char* pathname);
+        int deleteFile(const char* pathname);
+        int getFileSize(const char* pathname);
+        char* getFilepath(const char *filename);
+        vector<FileForListing> getFiles();
 
-    bool isFilenameValid(char* archiveName);
-    bool isFile(int archiveType);
+    protected:
+        vector<FileForListing> FileHandler :: getFilesByDir(const char* dirname);
+
+    private:
+        string path;
+        string dirname;
+        const int FILE_TYPE = 8;
+
+        string getFilenameWithSpaces(const char* filename, int filenameTotalSize);
+        int getLongestFilenameSize(vector<FileForListing> fileList);
+        bool isFilenameValid(const char* filename);
+        bool isFile(int filetype);
 };
 #endif
