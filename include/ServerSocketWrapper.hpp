@@ -14,7 +14,7 @@ class ServerSocketWrapper : public SocketWrapper {
         bool sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet);
         void setNumberOfClients(int numOfClients);
         Connection acceptClientConnection(); 
-        bool sendFileToClient(SocketDescriptor clientConnectionDescriptor, char* filename);
+        bool sendFileToClient(SocketDescriptor clientConnectionDescriptor, WrappedFile file);
 
     private:
         sockaddr_in buildAddress(int port);
