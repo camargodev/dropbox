@@ -252,13 +252,16 @@ int main(int argc, char *argv[])
                     printf("Could not download your file\n");
                 break;
             case INPUT_DELETE: {
-                string filename = fileHandler.getFilename(input.args.fileToDelete);
-                fileHandler.deleteFile(filename.c_str());
+                if(!clientSocket.deleteFile(input.args.fileToDelete))
+                    printf("Could not delete your file\n");
+
                 break;
             }
-            case INPUT_LIST_CLIENT:
-                fileHandler.printFileList(fileHandler.getFiles());
+            case INPUT_LIST_CLIENT: {
+                vector<FileForListing> files = fileHandler.getFiles();
+                fileHandler.printFileList(files);
                 break;
+            }
             case INPUT_LIST_SERVER:
                 clientSocket.askForFileList();
                 break;

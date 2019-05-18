@@ -33,7 +33,7 @@ int calculateNumberOfPayloads(int filesize) {
 
 bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile wrappedFile) {
     File* file = fopen(wrappedFile.filepath.c_str(), "r");
-    if(!file) return false;
+    if(file == NULL) return false;
 
     size_t bytesRead;
     int numberOfParts = calculateNumberOfPayloads(wrappedFile.filesize);

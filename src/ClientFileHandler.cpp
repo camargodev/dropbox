@@ -1,4 +1,5 @@
 #include "../include/ClientFileHandler.hpp"
+#include <time.h>
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -15,13 +16,22 @@ ClientFileHandler :: ClientFileHandler() {
 
 void ClientFileHandler :: printFileList(vector<FileForListing> fileList) {
     int longestFilenameSize = getLongestFilenameSize(fileList);
+
     string title = getFilenameWithSpaces("FILE", longestFilenameSize);
     string filename;
 
-    printf("%s | M | A | C\n", title.c_str());
+    printf("%s | Modification             | Access                   | Creation                \n", title.c_str());
     for (auto file : fileList) {
         filename = getFilenameWithSpaces(file.filename, longestFilenameSize);
-        printf("%s | %ld | %ld | %ld\n", filename.c_str(), file.modificationTime, file.accessTime, file.creationTime);
+        string m = ctime(&file.modificationTime);
+        string a = ctime(&file.accessTime);
+        string c = ctime(&file.creationTime);
+
+        m = m.substr(0, m.length() - 1);
+        a = a.substr(0, a.length() - 1);
+        c = c.substr(0, c.length() - 1);
+
+        printf("%s | %s | %s | %s\n", filename.c_str(), m.c_str(), a.c_str(), c.c_str());
     }
 }
 
@@ -91,7 +101,8 @@ string ClientFileHandler :: getFilepath(const char *filename) {
 }
 
 vector<FileForListing> ClientFileHandler :: getFiles() {
-    string dirname = this->getDirpath().c_str();
+    string dirname = this->getDirpath();
+    printf("Getting files...\n"); // print to avoid seg fault (do not know why? crazy stuff)
     return this->getFilesByDir(dirname.c_str());
 }
 
@@ -106,6 +117,7 @@ vector<FileForListing> ClientFileHandler :: getFilesByDir(const char* dirname) {
     struct dirent *currentFile = readdir(dir);
 
     while (currentFile != NULL) {
+
         if (this->isFilenameValid(currentFile->d_name) && this->isFile(currentFile->d_type)) {
             string fullName = string(dirname) + string(currentFile->d_name);
             stat(fullName.c_str(), stat_info);
