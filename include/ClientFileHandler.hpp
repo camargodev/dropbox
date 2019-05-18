@@ -9,20 +9,20 @@ class ClientFileHandler {
     public:
         ClientFileHandler();
         void printFileList(vector<FileForListing> fileList);
-        char* getFilename(const char* pathname);
-        char* getDirpath();
-        char* getDirname();
+        const char* getFilename(const char* pathname);
+        const char* getDirpath();
+        const char* getDirname();
         void createDir();
 
         void createFile(const char* pathname, string content, int size);
         WrappedFile getFile(const char* pathname);
         int deleteFile(const char* pathname);
         int getFileSize(const char* pathname);
-        char* getFilepath(const char *filename);
+        const char* getFilepath(const char *filename);
         vector<FileForListing> getFiles();
 
     protected:
-        vector<FileForListing> FileHandler :: getFilesByDir(const char* dirname);
+        vector<FileForListing> getFilesByDir(const char* dirname);
 
     private:
         string path;
