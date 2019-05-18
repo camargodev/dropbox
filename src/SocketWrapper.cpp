@@ -32,23 +32,25 @@ int calculateNumberOfPayloads(int filesize) {
 }
 
 bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile wrappedFile) {
+    File* file = fopen(wrappedFile.filepath.c_str(), "r");
+    if(!file) return false;
+
+
+    size_t bytesRead;
     char currentPayload[PAYLOAD_SIZE] = "";
-    int numberOfReadBytes = 0;
-    int currentIndex = 1;
     int numberOfParts = calculateNumberOfPayloads(wrappedFile.content.length());
 
-    string contentPart;
     Packet currentPacket;
     strcpy(currentPacket.filename, wrappedFile.filename);
     currentPacket.numberOfParts = numberOfParts;
 
     for(int i = 0; i < numberOfParts; i++) {
-        contentPart = wrappedFile.content.substr(i * PAYLOAD_SIZE, PAYLOAD_SIZE);
+        bytesRead = fread((void *)currentPayload, 1, PAYLOAD_SIZE, file);
 
-        strcpy(currentPacket.payload, contentPart.c_str());
+        memcpy(currentPacket.payload, currentPayload, PAYLOAD_SIZE);
         currentPacket.command = command;
         currentPacket.currentPartIndex = i + 1;
-        currentPacket.payloadSize = contentPart.size();
+        currentPacket.payloadSize = (int) bytesRead;
 
         if (!sendPacket(connectionDescriptor, &currentPacket))
             return false;
@@ -56,6 +58,7 @@ bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescripto
         memset(currentPayload, 0, PAYLOAD_SIZE);
     }
 
+    fclose(file);
     return true;
 }
 
