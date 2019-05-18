@@ -9,7 +9,8 @@
 // ==========================================================================================================
 ClientFileHandler :: ClientFileHandler() {
     this->path = getenv("HOME");
-    this->dirname = "sync_dir";
+    this->path = this->path + "/";
+    this->dirname = "sync_dir/";
 }
 
 void ClientFileHandler :: printFileList(vector<FileForListing> fileList) {
@@ -24,7 +25,7 @@ void ClientFileHandler :: printFileList(vector<FileForListing> fileList) {
     }
 }
 
-const char* ClientFileHandler :: getFilename(const char* filename) {
+string ClientFileHandler :: getFilename(const char* filename) {
     string strFilename = filename;
 
     if (strstr(filename, "/") != NULL) {
@@ -35,20 +36,20 @@ const char* ClientFileHandler :: getFilename(const char* filename) {
             return strFilename.substr(i + 1, size - i).c_str();
     }
 
-    return strFilename.c_str();
+    return strFilename;
 }
 
-const char* ClientFileHandler :: getDirpath() {
-    return (this->path + this->dirname + "/").c_str();
+string ClientFileHandler :: getDirpath() {
+    return this->path + this->dirname;
 }
 
-const char* ClientFileHandler :: getDirname() {
-    return this->dirname.c_str();
+string ClientFileHandler :: getDirname() {
+    return this->dirname;
 }
 
 void ClientFileHandler :: createDir() {
-    const char* dirpath = this->getDirpath();
-    mkdir(dirpath, 07777);
+    string dirpath = this->getDirpath();
+    mkdir(dirpath.c_str(), 07777);
 }
 
 void ClientFileHandler :: createFile(const char* pathname, string content, int size) {
@@ -79,15 +80,15 @@ int ClientFileHandler :: getFileSize(const char* pathname) {
     return in.tellg();
 }
 
-const char* ClientFileHandler :: getFilepath(const char *filename) {
+string ClientFileHandler :: getFilepath(const char *filename) {
     string dirpath = this->getDirpath();
     string strFilename = this->getFilename(filename);
-    return (dirpath + strFilename).c_str();
+    return dirpath + strFilename;
 }
 
 vector<FileForListing> ClientFileHandler :: getFiles() {
-    const char* dirname = this->getDirpath();
-    return this->getFilesByDir(dirname);
+    string dirname = this->getDirpath().c_str();
+    return this->getFilesByDir(dirname.c_str());
 }
 
 // ==========================================================================================================
@@ -142,7 +143,7 @@ int ClientFileHandler :: getLongestFilenameSize(vector<FileForListing> fileList)
 }
 
 bool ClientFileHandler :: isFilenameValid(const char* filename) {
-    string strFilename = string(filename);
+    string strFilename = filename;
     return strFilename.compare(".") != 0 && strFilename.compare("..") != 0;
 }
 

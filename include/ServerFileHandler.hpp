@@ -5,6 +5,7 @@
 
 class ServerFileHandler : public ClientFileHandler {
     public:
+        ServerFileHandler();
         void createClientDir(const char *username);
 
         // Overloaded from superclass
@@ -12,11 +13,11 @@ class ServerFileHandler : public ClientFileHandler {
         WrappedFile getFile(const char* username, const char* filename);
         int deleteFile(const char* username, const char* filename);
         int getFileSize(const char* username, const char* filename);
-        const char* getFilepath(const char* username, const char *filename);
+        string getFilepath(const char* username, const char *filename);
         vector<FileForListing> getFiles(const char* username);
 
     private:
-        const char* getClientDirpath(const char* username);
+        string getClientDirpath(const char* username);
 };
 
 #endif //DROPBOX_SERVERFILEHANDLER_HPP
