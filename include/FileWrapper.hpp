@@ -13,6 +13,7 @@ const int FILENAME_SIZE = 80;
 struct WrappedFile {
     string filepath;
     char filename[FILENAME_SIZE];
+    int filesize;
     bool isFound;
     string content;
 
