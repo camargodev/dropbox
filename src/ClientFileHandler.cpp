@@ -62,11 +62,11 @@ void ClientFileHandler :: createDir() {
     mkdir(dirpath.c_str(), 07777);
 }
 
-void ClientFileHandler :: createFile(const char* pathname, string content, int size) {
+void ClientFileHandler :: createFile(const char* pathname, const char* content, int size) {
     this->writeOnFile(pathname, content, size, "w");
 }
 
-void ClientFileHandler :: appendFile(const char* pathname, string content, int size) {
+void ClientFileHandler :: appendFile(const char* pathname, const char* content, int size) {
     this->writeOnFile(pathname, content, size, "a");
 }
 
@@ -167,9 +167,9 @@ bool ClientFileHandler :: isFile(int filetype) {
     return filetype == FILE_TYPE;
 }
 
-void ClientFileHandler :: writeOnFile(const char* pathname, string content, int size, const char* mode) {
+void ClientFileHandler :: writeOnFile(const char* pathname, const char* content, int size, const char* mode) {
     FILE* filePointer;
     filePointer = fopen(pathname, mode);
-    fwrite((void *)content.c_str(), 1, size, filePointer);
+    fwrite(content, 1, size, filePointer);
     fclose(filePointer);
 }

@@ -9,8 +9,8 @@ class ServerFileHandler : public ClientFileHandler {
         void createClientDir(const char *username);
 
         // Overloaded from superclass
-        void createFile(const char* username, const char* filename, string content, int size);
-        void appendFile(const char* username, const char* filename, string content, int size);
+        void createFile(const char* username, const char* filename, const char* content, int size);
+        void appendFile(const char* username, const char* filename, const char* content, int size);
         WrappedFile getFile(const char* username, const char* filename);
         int deleteFile(const char* username, const char* filename);
         int getFileSize(const char* username, const char* filename);

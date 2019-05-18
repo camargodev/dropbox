@@ -13,12 +13,12 @@ void ServerFileHandler :: createClientDir(const char* username) {
 }
 
 // Overloaded
-void ServerFileHandler :: createFile(const char* username, const char* filename, string content, int size) {
+void ServerFileHandler :: createFile(const char* username, const char* filename, const char* content, int size) {
     string clientFilepath = this->getFilepath(username, filename);
     ClientFileHandler::createFile(clientFilepath.c_str(), content, size);
 }
 
-void ServerFileHandler :: appendFile(const char* username, const char* filename, string content, int size) {
+void ServerFileHandler :: appendFile(const char* username, const char* filename, const char* content, int size) {
     string clientFilepath = this->getFilepath(username, filename);
     ClientFileHandler::appendFile(clientFilepath.c_str(), content, size);
 }

@@ -53,25 +53,19 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case UPLOAD_FILE: {
-            string strPayload = packet->payload;
+            if(packet->currentPartIndex == 1)
+                fileHandler.createFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
+            else
+                fileHandler.appendFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
 
-            if(packet->currentPartIndex == 1) {
-                fileHandler.createFile(connectedClient.username.c_str(), packet->filename, strPayload, packet->payloadSize);
-            } else {
-                fileHandler.appendFile(connectedClient.username.c_str(), packet->filename, strPayload, packet->payloadSize);
-            }
-
-            packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
 
             if (packet->currentPartIndex == packet->numberOfParts) {
-
                 for (auto openSocket : connectedClient.openSockets) {
                     WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
                     serverSocket.sendFileToClient(openSocket, file);
                 }
-
-                packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
             }
+
             break;
         }
 

@@ -14,8 +14,8 @@ class ClientFileHandler {
         string getDirname();
         void createDir();
 
-        void createFile(const char* pathname, string content, int size);
-        void appendFile(const char* pathname, string content, int size);
+        void createFile(const char* pathname, const char* content, int size);
+        void appendFile(const char* pathname, const char* content, int size);
         WrappedFile getFile(const char* pathname);
         int deleteFile(const char* pathname);
         int getFileSize(const char* pathname);
@@ -34,6 +34,6 @@ class ClientFileHandler {
         int getLongestFilenameSize(vector<FileForListing> fileList);
         bool isFilenameValid(const char* filename);
         bool isFile(int filetype);
-        void writeOnFile(const char* pathname, string content, int size, const char* mode);
+        void writeOnFile(const char* pathname, const char* content, int size, const char* mode);
 };
 #endif
