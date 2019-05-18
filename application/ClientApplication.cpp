@@ -74,7 +74,7 @@ Input proccesCommand(char userInput[INPUT_SIZE]) {
             input.args.fileToDelete = getNextValueOnInput();
             break;
         case INPUT_LIST_CLIENT:
-            input.args.directory = (char *) fileHandler.getDirname();
+            input.args.directory = (char *)fileHandler.getDirname().c_str();
             break;
     }
     return input;
@@ -165,7 +165,7 @@ void dealWithEvent(struct inotify_event *event){
     cout << "========="<<notify_count<<"==========="<<endl;
     notify_count++;
     
-    const char* path_file = fileHandler.getFilepath(event->name);
+    string path_file = fileHandler.getFilepath(event->name);
 //    strcat(path_file, path);
 //    strcat(path_file, "/");
 //    strcat(path_file, event->name);
@@ -173,7 +173,7 @@ void dealWithEvent(struct inotify_event *event){
 
     if(event->mask & IN_CLOSE_WRITE || event->mask & IN_MOVED_TO){
         cout << "CRIOU/EDITOU um arquivo" << endl;
-        WrappedFile file = fileHandler.getFile(path_file);
+        WrappedFile file = fileHandler.getFile(path_file.c_str());
         if (!clientSocket.uploadFileToServer(file))
             printf("Could not send your file\n");
 
@@ -188,10 +188,10 @@ void dealWithEvent(struct inotify_event *event){
 }
 
 void checkForUpdates() {
-    const char* path_name = fileHandler.getDirpath();
+    string path_name = fileHandler.getDirpath();
     cout << path_name << endl;
     int fd = inotify_init1(IN_NONBLOCK);
-    int wd = inotify_add_watch(fd, path_name, IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
+    int wd = inotify_add_watch(fd, path_name.c_str(), IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
     char *buffer[BUF_LEN];
 
     int size_read, i;
