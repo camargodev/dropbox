@@ -1,9 +1,9 @@
 #ifndef DROPBOX_SERVERFILEHANDLER_HPP
 #define DROPBOX_SERVERFILEHANDLER_HPP
 
-#include "FileHandler.hpp"
+#include "ClientFileHandler.hpp"
 
-class ServerFileHandler :: FileHandler {
+class ServerFileHandler :: ClientFileHandler {
     public:
         void createClientDir(const char *username);
 

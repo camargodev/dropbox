@@ -14,7 +14,7 @@ vector<FileForListing> receivedFileList;
 SocketDescriptor serverDescriptor;
 ClientSocketWrapper clientSocket;
 PacketHandler packetHandler;
-FileHandler fileHandler;
+ClientFileHandler fileHandler;
 char* clientUsername;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {

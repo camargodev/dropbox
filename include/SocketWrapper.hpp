@@ -10,7 +10,7 @@
 #include <netdb.h> 
 #include "Connection.hpp"
 #include "Packet.hpp"
-#include "FileHandler.hpp"
+#include "ClientFileHandler.hpp"
 
 
 using namespace std;
