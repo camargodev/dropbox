@@ -35,27 +35,22 @@ bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescripto
     File* file = fopen(wrappedFile.filepath.c_str(), "r");
     if(!file) return false;
 
-
     size_t bytesRead;
-    char currentPayload[PAYLOAD_SIZE] = "";
-    int numberOfParts = calculateNumberOfPayloads(wrappedFile.content.length());
-
+    int numberOfParts = calculateNumberOfPayloads(wrappedFile.filesize);
+    
     Packet currentPacket;
     strcpy(currentPacket.filename, wrappedFile.filename);
     currentPacket.numberOfParts = numberOfParts;
 
     for(int i = 0; i < numberOfParts; i++) {
-        bytesRead = fread((void *)currentPayload, 1, PAYLOAD_SIZE, file);
+        bytesRead = fread(&(currentPacket.payload), sizeof(char), PAYLOAD_SIZE, file);
 
-        memcpy(currentPacket.payload, currentPayload, PAYLOAD_SIZE);
         currentPacket.command = command;
         currentPacket.currentPartIndex = i + 1;
         currentPacket.payloadSize = (int) bytesRead;
 
         if (!sendPacket(connectionDescriptor, &currentPacket))
             return false;
-
-        memset(currentPayload, 0, PAYLOAD_SIZE);
     }
 
     fclose(file);

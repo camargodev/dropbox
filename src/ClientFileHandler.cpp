@@ -67,6 +67,7 @@ WrappedFile ClientFileHandler :: getFile(const char* pathname) {
     WrappedFile wrappedFile((char *)filename.c_str());
     wrappedFile.isFound = fileStream.good();
     wrappedFile.filepath = pathname;
+    wrappedFile.filesize = this->getFileSize(pathname);
 
     if(wrappedFile.isFound)
         wrappedFile.content.assign(istreambuf_iterator<char>(fileStream), istreambuf_iterator<char>());
