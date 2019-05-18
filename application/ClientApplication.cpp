@@ -93,14 +93,6 @@ string getCorrectFilename(const string& s) {
    return("");
 }
 
-void handleDownloadedFile(Packet* packet) {
-	// packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
-	string filenameToSave = getCorrectFilename(packet->filename);
-	File* file = fopen(filenameToSave.c_str(), "a"); 
-	fwrite(&(packet->payload), 1, packet->payloadSize, file);
-	fclose(file);
-}
-
 void handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
         case SYNC_FILE:
@@ -108,26 +100,22 @@ void handleReceivedPacket(Packet* packet) {
             if (!clientSocket.askToDownloadFile(packet->filename))
                 printf("Could not download your file\n");
             break;
-        case DOWNLOADED_FILE:
-            handleDownloadedFile(packet);
-            // packetHandler.addPacketToReceivedFile(serverDescriptor, packet->filename, packet);
-            // if (packet->currentPartIndex == packet->numberOfParts) {
-            //     string content = packetHandler.getFileContent(serverDescriptor, packet->filename);
-            //     int contentSize = packetHandler.getFileContentSize(serverDescriptor, packet->filename);
-            //     printf("\nI downloaded file %s with payload:\n", packet->filename);
-            //     // fileHandler.createFile(packet->filename, content, contentSize);
-			// 	packetHandler.removeFileFromBeingReceivedList(serverDescriptor, packet->filename);
-            // }
-			break;
+        case DOWNLOADED_FILE: {
+            string filepath = fileHandler.getFilepath(packet->filename);
+            fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            break;
+        }
         case SIMPLE_MESSAGE:
             printf("I received a simple message from server: %s\n", packet->payload);
             break;
         case ERROR_MESSAGE:
             printf("Error with file %s: %s\n", packet->filename, packet->payload);
             break;
-        case DELETE_ORDER:
-            fileHandler.deleteFile(packet->filename);
+        case DELETE_ORDER: {
+            string filepath = fileHandler.getFilepath(packet->filename);
+            fileHandler.deleteFile(filepath.c_str());
             break;
+        }
         case FILE_LISTING: {
             FileForListing receivedFile(packet->filename);
             receivedFile.modificationTime = packet->modificationTime;
@@ -149,6 +137,7 @@ void *handleServerAnswers(void* dummy) {
         handleReceivedPacket(packet);
     }
 }
+
 using namespace std;
 
 #define EVENT_SIZE  (sizeof (struct inotify_event))
@@ -166,9 +155,6 @@ void dealWithEvent(struct inotify_event *event){
     notify_count++;
     
     string path_file = fileHandler.getFilepath(event->name);
-//    strcat(path_file, path);
-//    strcat(path_file, "/");
-//    strcat(path_file, event->name);
     cout << path_file << endl;
 
     if(event->mask & IN_CLOSE_WRITE || event->mask & IN_MOVED_TO){
@@ -242,7 +228,7 @@ int main(int argc, char *argv[])
     pthread_t connectionThread, notifyThread;
     printf("Creating thread to get server answers...\n");
     pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
-    pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
+    // pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
 
     bool shouldExit = false;
     while (!shouldExit) {
@@ -256,18 +242,20 @@ int main(int argc, char *argv[])
                 break;
             case INPUT_UPLOAD: {
                 WrappedFile file = fileHandler.getFile(input.args.fileToUpload);
-                if (!clientSocket.uploadFileToServer(file))
-                    printf("Could not send your file\n");
-            }
+                if(!clientSocket.uploadFileToServer(file))
+                    printf("Could not upload your file\n");
+
                 break;
+            }
             case INPUT_DOWNLOAD:
                 if (!clientSocket.askToDownloadFile(input.args.fileToDownload))
                     printf("Could not download your file\n");
                 break;
-            case INPUT_DELETE:
-                if (!clientSocket.deleteFile(input.args.fileToDelete))
-                    printf("Could not delete your file\n");
+            case INPUT_DELETE: {
+                string filename = fileHandler.getFilename(input.args.fileToDelete);
+                fileHandler.deleteFile(filename.c_str());
                 break;
+            }
             case INPUT_LIST_CLIENT:
                 fileHandler.printFileList(fileHandler.getFiles());
                 break;

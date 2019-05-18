@@ -27,38 +27,35 @@ bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* 
     return response  >= 0;
 }
 
-std::ifstream::pos_type getFilesize(const char* filename)
-{
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-    return in.tellg(); 
-}
-
-int calculateNumberOfPayloads(const char* filename) {
-    int filesize = getFilesize(filename);
-    return ceil((float) filesize/PAYLOAD_SIZE);
+int calculateNumberOfPayloads(int filesize) {
+    return ceil((float) filesize / PAYLOAD_SIZE);
 }
 
 bool SocketWrapper :: sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile wrappedFile) {
-    File* file = fopen(wrappedFile.filename, "r");
-    if (file == NULL) 
-        return false;
     char currentPayload[PAYLOAD_SIZE] = "";
     int numberOfReadBytes = 0;
     int currentIndex = 1;
-    int numberOfParts = calculateNumberOfPayloads(wrappedFile.filename);
+    int numberOfParts = calculateNumberOfPayloads(wrappedFile.content.length());
+
+    string contentPart;
     Packet currentPacket;
-    while ((numberOfReadBytes = fread(&(currentPacket.payload), sizeof(char), PAYLOAD_SIZE, file)) > 0) {
+    strcpy(currentPacket.filename, wrappedFile.filename);
+    currentPacket.numberOfParts = numberOfParts;
+
+    for(int i = 0; i < numberOfParts; i++) {
+        contentPart = wrappedFile.content.substr(i * PAYLOAD_SIZE, PAYLOAD_SIZE);
+
+        strcpy(currentPacket.payload, contentPart.c_str());
         currentPacket.command = command;
-        strcpy(currentPacket.filename, wrappedFile.filename);
-        currentPacket.currentPartIndex = currentIndex;
-        currentPacket.numberOfParts = numberOfParts;
-        currentPacket.payloadSize = numberOfReadBytes;
-        // Packet packet(command, wrappedFile.filename, currentIndex, numberOfParts, numberOfReadBytes);
+        currentPacket.currentPartIndex = i + 1;
+        currentPacket.payloadSize = contentPart.size();
+
         if (!sendPacket(connectionDescriptor, &currentPacket))
             return false;
-        currentIndex++;
+
         memset(currentPayload, 0, PAYLOAD_SIZE);
     }
+
     return true;
 }
 

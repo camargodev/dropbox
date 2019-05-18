@@ -35,96 +35,92 @@ string getCorrectFilename(const string& s, string username) {
    return("");
 }
 
-void handleUploadedFile(string username, Packet* packet) {
-	// packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
-	string filenameToSave = getCorrectFilename(packet->filename, username);
-	File* file = fopen(filenameToSave.c_str(), "a"); 
-	fwrite(&(packet->payload), 1, packet->payloadSize, file);
-	fclose(file);
-}
-
 bool handleReceivedPacket(int socket, Packet* packet) {
     ConnectedClient connectedClient = connHandler.getConnectedClientBySocket(socket);
-	bool shouldKeepExecuting = true;
+
+    bool shouldKeepExecuting = true;
 	string filenameToSave;
 
 	switch (packet->command) {
 		case GET_SYNC_DIR: {
             printf("Client %s requested sync dir\n", connectedClient.username.c_str());
             vector <FileForListing> filesOnUserDirectory = fileHandler.getFiles(connectedClient.username.c_str());
+
             printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
             serverSocket.sendFileListForSyncDir(socket, filesOnUserDirectory);
+
+            break;
         }
-			break;
 
         case UPLOAD_FILE: {
-            handleUploadedFile(connectedClient.username, packet);
+            string strPayload = packet->payload;
+
+            if(packet->currentPartIndex == 1) {
+                fileHandler.createFile(connectedClient.username.c_str(), packet->filename, strPayload, packet->payloadSize);
+            } else {
+                fileHandler.appendFile(connectedClient.username.c_str(), packet->filename, strPayload, packet->payloadSize);
+            }
+
             packetHandler.addPacketToReceivedFile(socket, packet->filename, packet);
-            // filenameToSave = getCorrectFilename(packet->filename, connectedClient.username);
-            // printf("FILENAME IS %s\n", filenameToSave.c_str());
-            // File* file = fopen(filenameToSave.c_str(), "a");
-            // fwrite(&(packet->payload), 1, packet->payloadSize, file);
-            // fclose(file);
+
             if (packet->currentPartIndex == packet->numberOfParts) {
-                // string content = packetHandler.getFileContent(socket, packet->filename);
-                // int contentSize = packetHandler.getFileContentSize(socket, packet->filename);
-                // printf("\nI received file %s\n", packet->filename);
-                // connectedClient = connHandler.getConnectedClientBySocket(socket);
-                // printf("Now I will notify user %s\n", connectedClient.username.c_str());
+
                 for (auto openSocket : connectedClient.openSockets) {
-                    // if (!receivedFromTheCurrentOpenSocket(socket, openSocket)) {
                     WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
                     serverSocket.sendFileToClient(openSocket, file);
-                    // }
                 }
-                // // fileHandler.createFile(connectedClient.username.c_str(), packet->filename, content, contentSize);
-                // string filenameOk = getCorrectFilename(packet->filename, connectedClient.username);
-                // File* file = fopen(filenameOk.c_str(), "w"); 
-                // printf("FILENAME IS %s\n", filenameOk.c_str());
-                // fwrite(&(content), 1, contentSize, file);
-                // fclose(file);
+
                 packetHandler.removeFileFromBeingReceivedList(socket, packet->filename);
             }
+            break;
         }
-			break;
 
 		case DOWNLOAD_REQUISITION: {
             printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
 
             WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->payload);
             serverSocket.sendFileToClient(socket, file);
+
+            break;
         }
-			break;
 
 		case DELETE_REQUISITION: {
             fileHandler.deleteFile(connectedClient.username.c_str(), packet->filename);
+
             for (auto openSocket : connectedClient.openSockets) {
                 Packet answer(DELETE_ORDER, packet->filename);
                 serverSocket.sendPacketToClient(openSocket, &answer);
             }
+
+            break;
         }
-			break;
 
 		case IDENTIFICATION: {
             printf("\nClient %s connected on socket %i\n", packet->payload, socket);
+
             fileHandler.createClientDir(packet->payload);
             connHandler.addSocketToClient(packet->payload, socket);
-        }
+
             break;
+        }
 
 		case DISCONNECT: {
             printf("\nClient %s disconnected on socket %i\n", connectedClient.username.c_str(), socket);
+
             connHandler.removeSocketFromUser(connectedClient.username, socket);
             shouldKeepExecuting = false;
+
+            break;
         }
-			break;
 
 		case LIST_REQUISITION: {
             vector <FileForListing> filesOnUserDir = fileHandler.getFiles(connectedClient.username.c_str());
+
             printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
             serverSocket.sendFileList(socket, filesOnUserDir);
+
+            break;
         }
-			break;
     }
 
 	return shouldKeepExecuting;

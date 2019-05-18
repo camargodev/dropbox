@@ -18,6 +18,11 @@ void ServerFileHandler :: createFile(const char* username, const char* filename,
     ClientFileHandler::createFile(clientFilepath.c_str(), content, size);
 }
 
+void ServerFileHandler :: appendFile(const char* username, const char* filename, string content, int size) {
+    string clientFilepath = this->getFilepath(username, filename);
+    ClientFileHandler::appendFile(clientFilepath.c_str(), content, size);
+}
+
 WrappedFile ServerFileHandler :: getFile(const char* username, const char* filename) {
     string clientFilepath = this->getFilepath(username, filename);
     return ClientFileHandler::getFile(clientFilepath.c_str());

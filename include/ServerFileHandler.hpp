@@ -10,6 +10,7 @@ class ServerFileHandler : public ClientFileHandler {
 
         // Overloaded from superclass
         void createFile(const char* username, const char* filename, string content, int size);
+        void appendFile(const char* username, const char* filename, string content, int size);
         WrappedFile getFile(const char* username, const char* filename);
         int deleteFile(const char* username, const char* filename);
         int getFileSize(const char* username, const char* filename);

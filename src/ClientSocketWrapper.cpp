@@ -54,6 +54,7 @@ bool ClientSocketWrapper :: uploadFileToServer(WrappedFile file) {
         printf("Could not find file %s\n", file.filename);
         return false;
     }
+
     if (!sendFile(UPLOAD_FILE, this->socketDescriptor, file)) {
         printf("Error sending file %s\n", file.filename);
         return false;

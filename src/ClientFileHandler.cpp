@@ -53,16 +53,18 @@ void ClientFileHandler :: createDir() {
 }
 
 void ClientFileHandler :: createFile(const char* pathname, string content, int size) {
-    FILE* filePointer;
-    filePointer = fopen(pathname, "w");
-    fwrite(&(content), 1, size, filePointer);
-    fclose(filePointer);
+    this->writeOnFile(pathname, content, size, "w");
+}
+
+void ClientFileHandler :: appendFile(const char* pathname, string content, int size) {
+    this->writeOnFile(pathname, content, size, "a");
 }
 
 WrappedFile ClientFileHandler :: getFile(const char* pathname) {
     ifstream fileStream(pathname);
 
-    WrappedFile wrappedFile((char *)pathname);
+    string filename = this->getFilename(pathname);
+    WrappedFile wrappedFile((char *)filename.c_str());
     wrappedFile.isFound = fileStream.good();
 
     if(wrappedFile.isFound)
@@ -149,4 +151,11 @@ bool ClientFileHandler :: isFilenameValid(const char* filename) {
 
 bool ClientFileHandler :: isFile(int filetype) {
     return filetype == FILE_TYPE;
+}
+
+void ClientFileHandler :: writeOnFile(const char* pathname, string content, int size, const char* mode) {
+    FILE* filePointer;
+    filePointer = fopen(pathname, mode);
+    fwrite((void *)content.c_str(), 1, size, filePointer);
+    fclose(filePointer);
 }
