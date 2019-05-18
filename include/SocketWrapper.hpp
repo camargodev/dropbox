@@ -35,7 +35,6 @@ class SocketWrapper {
 
     protected:
         SocketDescriptor socketDescriptor;
-        FileHandler fileHandler;
 
         sockaddr_in buildDefaultAddress(int port);
         Packet* receivePacket(SocketDescriptor connectionDescriptor);

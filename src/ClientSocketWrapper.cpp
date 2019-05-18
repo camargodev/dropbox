@@ -49,8 +49,7 @@ bool ClientSocketWrapper :: disconnectFromServer() {
     return sendResponse;
 }
 
-bool ClientSocketWrapper :: uploadFileToServer(char* filename) {
-    WrappedFile file = fileHandler.getFileByFilename(filename);
+bool ClientSocketWrapper :: uploadFileToServer(WrappedFile file) {
     if (!file.isFound) {
         printf("Could not find file %s\n", filename);
         return false;

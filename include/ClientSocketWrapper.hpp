@@ -12,7 +12,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool sendPacketToServer(Packet* packet);
         bool setServer(string serverHostname, int serverPort);
         bool connectToServer();
-        bool uploadFileToServer(char* filename);
+        bool uploadFileToServer(WrappedFile file);
         bool identifyUsername(char* username);
         bool disconnectFromServer();
         bool askToDownloadFile(char* filename);
