@@ -151,10 +151,10 @@ void *handleServerAnswers(void* dummy) {
 using namespace std;
 
 #define EVENT_SIZE  (sizeof (struct inotify_event))
-
 #define BUF_LEN (EVENT_SIZE + 4096)
 int notify_count = 0;
-char* nome_usuario;
+char* username;
+
 void dealWithEvent(struct inotify_event *event, char* path){
 
     string name = event->name;
@@ -170,9 +170,10 @@ void dealWithEvent(struct inotify_event *event, char* path){
     strcat(path_file, event->name);
     cout << path_file<< endl;
 
-    if(event->mask & IN_CLOSE_WRITE){
-        cout << "EDITOU um arquivo" <<endl;
-        if (!clientSocket.uploadFileToServer(path_file))
+    if(event->mask & IN_CLOSE_WRITE || event->mask & IN_MOVED_TO){
+        cout << "CRIOU/EDITOU um arquivo" << endl;
+        WrappedFile file = fileHandler.getFile(path_file);
+        if (!clientSocket.uploadFileToServer(file))
             printf("Could not send your file\n");
 
     }
@@ -181,11 +182,7 @@ void dealWithEvent(struct inotify_event *event, char* path){
         if (!clientSocket.deleteFile(event->name))
             printf("Could not delete your file\n");
     }
-    if(event->mask & IN_MOVED_TO){
-        cout << "CRIOU um arquivo" <<endl;
-        if (!clientSocket.uploadFileToServer(path_file))
-            printf("Could not send your file\n");
-    }
+
     cout << "Name: " << event->name << endl;
 }
 
@@ -235,6 +232,7 @@ int main(int argc, char *argv[])
     }
 
     clientUsername = input.username;
+    username = input.username;
     serverDescriptor = clientSocket.getSocketDescriptor();
 
     fileHandler.createDir();
@@ -256,7 +254,8 @@ int main(int argc, char *argv[])
                 shouldExit = true;
                 break;
             case INPUT_UPLOAD:
-                if (!clientSocket.uploadFileToServer(input.args.fileToUpload))
+                WrappedFile file = fileHandler.getFile(input.args.fileToUpload);
+                if (!clientSocket.uploadFileToServer(file))
                     printf("Could not send your file\n");
                 break;
             case INPUT_DOWNLOAD:
