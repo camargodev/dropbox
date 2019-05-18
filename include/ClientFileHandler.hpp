@@ -5,9 +5,9 @@
 #include <vector> 
 #include "FileWrapper.hpp"
 
-class FileHandler {
+class ClientFileHandler {
     public:
-        FileHandler();
+        ClientFileHandler();
         void printFileList(vector<FileForListing> fileList);
         char* getFilename(const char* pathname);
         char* getDirpath();

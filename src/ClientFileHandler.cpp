@@ -1,4 +1,4 @@
-#include "../include/FileHandler.hpp"
+#include "../include/ClientFileHandler.hpp"
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -7,12 +7,12 @@
 // ==========================================================================================================
 // Public methods
 // ==========================================================================================================
-FileHandler ::FileHandler() {
+ClientFileHandler :: ClientFileHandler() {
     this->path = getenv("HOME");
     this->dirname = "sync_dir";
 }
 
-void FileHandler :: printFileList(vector<FileForListing> fileList) {
+void ClientFileHandler :: printFileList(vector<FileForListing> fileList) {
     int longestFilenameSize = getLongestFilenameSize(fileList);
     string title = getFilenameWithSpaces("FILE", longestFilenameSize);
     string filename;
@@ -24,7 +24,7 @@ void FileHandler :: printFileList(vector<FileForListing> fileList) {
     }
 }
 
-char* FileHandler :: getFilename(const char* filename) {
+char* ClientFileHandler :: getFilename(const char* filename) {
     string strFilename = filename;
 
     if (strstr(filename, "/") != NULL)
@@ -38,27 +38,27 @@ char* FileHandler :: getFilename(const char* filename) {
     return strFilename.c_str();
 }
 
-char* FileHandler :: getDirpath() {
+char* ClientFileHandler :: getDirpath() {
     return (this->path + this->dirname + "/").c_str();
 }
 
-char* FileHandler :: getDirname() {
+char* ClientFileHandler :: getDirname() {
     return this->dirname.c_str();
 }
 
-void FileHandler ::createDir() {
+void ClientFileHandler ::createDir() {
     const char* dirpath = this->getDirpath();
     mkdir(dirpath, 07777);
 }
 
-void FileHandler :: createFile(const char* pathname, string content, int size) {
+void ClientFileHandler :: createFile(const char* pathname, string content, int size) {
     FILE* filePointer;
     filePointer = fopen(pathname, "w");
     fwrite(&(content), 1, size, filePointer);
     fclose(filePointer);
 }
 
-WrappedFile FileHandler :: getFile(const char* pathname) {
+WrappedFile ClientFileHandler :: getFile(const char* pathname) {
     ifstream fileStream(pathname);
 
     WrappedFile wrappedFile(pathname);
@@ -70,22 +70,22 @@ WrappedFile FileHandler :: getFile(const char* pathname) {
     return wrappedFile;
 }
 
-int FileHandler :: deleteFile(const char* pathname) {
+int ClientFileHandler :: deleteFile(const char* pathname) {
     return remove(pathname);
 }
 
-int FileHandler :: getFileSize(const char* pathname) {
+int ClientFileHandler :: getFileSize(const char* pathname) {
     std::ifstream in(pathname, std::ifstream::ate | std::ifstream::binary);
     return in.tellg();
 }
 
-char* FileHandler :: getFilepath(const char *filename) {
+char* ClientFileHandler :: getFilepath(const char *filename) {
     string dirpath = this->getDirpath();
     string strFilename = this->getFilename(filename);
     return (dirpath + strFilename).c_str();
 }
 
-vector<FileForListing> FileHandler :: getFiles() {
+vector<FileForListing> ClientFileHandler :: getFiles() {
     char* dirname = this->getDirpath();
     return this->getFilesByDir(dirname);
 }
@@ -93,7 +93,7 @@ vector<FileForListing> FileHandler :: getFiles() {
 // ==========================================================================================================
 // Protected methods
 // ==========================================================================================================
-vector<FileForListing> FileHandler :: getFilesByDir(const char* dirname) {
+vector<FileForListing> ClientFileHandler :: getFilesByDir(const char* dirname) {
     vector <FileForListing> filenames;
     struct stat* stat_info;
 
@@ -122,7 +122,7 @@ vector<FileForListing> FileHandler :: getFilesByDir(const char* dirname) {
 // ==========================================================================================================
 // Private methods
 // ==========================================================================================================
-string FileHandler :: getFilenameWithSpaces(const char* filename, int filenameTotalSize) {
+string ClientFileHandler :: getFilenameWithSpaces(const char* filename, int filenameTotalSize) {
     int filenameSize = string(filename).size();
 
     string spaces(filenameTotalSize - filenameSize, ' ');
@@ -131,7 +131,7 @@ string FileHandler :: getFilenameWithSpaces(const char* filename, int filenameTo
     return totalFilename;
 }
 
-int FileHandler :: getLongestFilenameSize(vector<FileForListing> fileList) {
+int ClientFileHandler :: getLongestFilenameSize(vector<FileForListing> fileList) {
     int maxFilenameSize = FILENAME_TITLE_SIZE;
     for (auto fileToList : fileList) {
         int filenameSize = string(fileToList.filename).size();
@@ -141,11 +141,11 @@ int FileHandler :: getLongestFilenameSize(vector<FileForListing> fileList) {
     return maxFilenameSize;
 }
 
-bool FileHandler :: isFilenameValid(const char* filename) {
+bool ClientFileHandler :: isFilenameValid(const char* filename) {
     string strFilename = string(filename);
     return strFilename.compare(".") != 0 && strFilename.compare("..") != 0;
 }
 
-bool FileHandler :: isFile(int filetype) {
+bool ClientFileHandler :: isFile(int filetype) {
     return filetype == FILE_TYPE;
 }
