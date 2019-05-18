@@ -5,6 +5,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
+using namespace std;
+
 using Time = time_t;
 const int FILENAME_SIZE = 80;
 

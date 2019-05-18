@@ -74,7 +74,7 @@ Input proccesCommand(char userInput[INPUT_SIZE]) {
             input.args.fileToDelete = getNextValueOnInput();
             break;
         case INPUT_LIST_CLIENT:
-            input.args.directory = fileHandler.getDirname();
+            input.args.directory = (char *) fileHandler.getDirname();
             break;
     }
     return input;
@@ -128,7 +128,7 @@ void handleReceivedPacket(Packet* packet) {
         case DELETE_ORDER:
             fileHandler.deleteFile(packet->filename);
             break;
-        case FILE_LISTING:
+        case FILE_LISTING: {
             FileForListing receivedFile(packet->filename);
             receivedFile.modificationTime = packet->modificationTime;
             receivedFile.accessTime = packet->accessTime;
@@ -138,6 +138,7 @@ void handleReceivedPacket(Packet* packet) {
                 fileHandler.printFileList(receivedFileList);
                 receivedFileList.clear();
             }
+        }
             break;
     }
 }
@@ -155,7 +156,7 @@ using namespace std;
 int notify_count = 0;
 char* username;
 
-void dealWithEvent(struct inotify_event *event, char* path){
+void dealWithEvent(struct inotify_event *event){
 
     string name = event->name;
     if ((event->len == 32) || (name.find(".") == 0)){
@@ -164,11 +165,11 @@ void dealWithEvent(struct inotify_event *event, char* path){
     cout << "========="<<notify_count<<"==========="<<endl;
     notify_count++;
     
-    char path_file[500] = {0};
-    strcat(path_file, path);
-    strcat(path_file, "/");
-    strcat(path_file, event->name);
-    cout << path_file<< endl;
+    const char* path_file = fileHandler.getFilepath(event->name);
+//    strcat(path_file, path);
+//    strcat(path_file, "/");
+//    strcat(path_file, event->name);
+    cout << path_file << endl;
 
     if(event->mask & IN_CLOSE_WRITE || event->mask & IN_MOVED_TO){
         cout << "CRIOU/EDITOU um arquivo" << endl;
@@ -187,8 +188,8 @@ void dealWithEvent(struct inotify_event *event, char* path){
 }
 
 void checkForUpdates() {
-    char* path_name = fileHandler.getDirpath();
-    cout << path_name <<endl;
+    const char* path_name = fileHandler.getDirpath();
+    cout << path_name << endl;
     int fd = inotify_init1(IN_NONBLOCK);
     int wd = inotify_add_watch(fd, path_name, IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
     char *buffer[BUF_LEN];
@@ -200,7 +201,7 @@ void checkForUpdates() {
         if(size_read > 0) {
 
             inotify_event* event = (struct inotify_event*) buffer;
-            dealWithEvent(event, path_name);
+            dealWithEvent(event);
             i += event->len + EVENT_SIZE;
 
         }
@@ -253,10 +254,11 @@ int main(int argc, char *argv[])
                 clientSocket.disconnectFromServer();
                 shouldExit = true;
                 break;
-            case INPUT_UPLOAD:
+            case INPUT_UPLOAD: {
                 WrappedFile file = fileHandler.getFile(input.args.fileToUpload);
                 if (!clientSocket.uploadFileToServer(file))
                     printf("Could not send your file\n");
+            }
                 break;
             case INPUT_DOWNLOAD:
                 if (!clientSocket.askToDownloadFile(input.args.fileToDownload))

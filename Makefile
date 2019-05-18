@@ -5,8 +5,8 @@ SRC = src
 APP = application
 
 all: wrappers handlers
-	${CC} -g -o server ${APP}/ServerApplication.cpp ${OBJ}/ServerSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ConnectionHandler.o ${OBJ}/FileHandler.o -pthread
-	${CC} -g -o client ${APP}/ClientApplication.cpp ${OBJ}/ClientSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/FileHandler.o -pthread
+	${CC} -g -o server ${APP}/ServerApplication.cpp ${OBJ}/ServerSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ConnectionHandler.o ${OBJ}/ServerFileHandler.o ${OBJ}/ClientFileHandler.o -pthread
+	${CC} -g -o client ${APP}/ClientApplication.cpp ${OBJ}/ClientSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ClientFileHandler.o -pthread
 
 wrappers:
 	${CC} -g -c ${SRC}/SocketWrapper.cpp
@@ -17,7 +17,8 @@ wrappers:
 handlers:
 	${CC} -g -c ${SRC}/PacketHandler.cpp
 	${CC} -g -c ${SRC}/ConnectionHandler.cpp
-	${CC} -g -c ${SRC}/FileHandler.cpp
+	${CC} -g -c ${SRC}/ClientFileHandler.cpp
+	${CC} -g -c ${SRC}/ServerFileHandler.cpp
 	mv *.o objects 
 
 clean:
