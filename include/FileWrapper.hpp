@@ -11,6 +11,7 @@ using Time = time_t;
 const int FILENAME_SIZE = 80;
 
 struct WrappedFile {
+    string filepath;
     char filename[FILENAME_SIZE];
     bool isFound;
     string content;
