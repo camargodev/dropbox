@@ -1,6 +1,10 @@
 #include "../include/ConnectionHandler.hpp"
 #include <algorithm>
 
+ConnectionHandler :: ConnectionHandler() {
+    sem_init(&connecting, 0, 1);
+}
+
 bool ConnectionHandler :: isClientAlreadyConnected(const string& username) {
     for (auto connectedClient : connectedClients)
         if (username.compare(connectedClient.username) == 0)
@@ -9,9 +13,11 @@ bool ConnectionHandler :: isClientAlreadyConnected(const string& username) {
 }
 
 void ConnectionHandler :: addSocketToNewClient(const string& username, int socket) {
+    sem_wait(&connecting);
     ConnectedClient newClient(username);
     newClient.openSockets.push_back(socket);
     connectedClients.push_back(newClient);
+    sem_post(&connecting);
 }
 
 void ConnectionHandler :: addSocketToExistingClient(const string& username, int socket) {
