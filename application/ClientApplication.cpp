@@ -139,63 +139,6 @@ void *handleServerAnswers(void* dummy) {
     }
 }
 
-using namespace std;
-
-#define EVENT_SIZE  (sizeof (struct inotify_event))
-#define BUF_LEN (EVENT_SIZE + 4096)
-int notify_count = 0;
-char* username;
-
-void dealWithEvent(struct inotify_event *event){
-
-    string name = event->name;
-    if ((event->len == 32) || (name.find(".") == 0)){
-        return;
-    }
-    cout << "========="<<notify_count<<"==========="<<endl;
-    notify_count++;
-    
-    string path_file = fileHandler.getFilepath(event->name);
-    cout << path_file << endl;
-
-    if(event->mask & IN_CLOSE_WRITE || event->mask & IN_MOVED_TO){
-        cout << "CRIOU/EDITOU um arquivo" << endl;
-        WrappedFile file = fileHandler.getFile(path_file.c_str());
-        if (!clientSocket.uploadFileToServer(file))
-            printf("Could not send your file\n");
-
-    }
-    if(event->mask & IN_MOVED_FROM){
-        cout << "DELETOU um arquivo" <<endl;
-        if (!clientSocket.deleteFile(event->name))
-            printf("Could not delete your file\n");
-    }
-
-    cout << "Name: " << event->name << endl;
-}
-
-void checkForUpdates() {
-    string path_name = fileHandler.getDirpath();
-    cout << path_name << endl;
-    int fd = inotify_init1(IN_NONBLOCK);
-    int wd = inotify_add_watch(fd, path_name.c_str(), IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
-    char *buffer[BUF_LEN];
-
-    int size_read, i;
-    while(true) {
-        i = 0;
-        size_read = read(fd, buffer, BUF_LEN);
-        if(size_read > 0) {
-
-            inotify_event* event = (struct inotify_event*) buffer;
-            dealWithEvent(event);
-            i += event->len + EVENT_SIZE;
-
-        }
-    }
-
-}
-
 void *handleNotifyEvents(void* dummy) {
     Notifier notifier(fileHandler.getDirpath());
     while(true) {
@@ -235,7 +178,6 @@ int main(int argc, char *argv[])
     }
 
     clientUsername = input.username;
-    username = input.username;
     serverDescriptor = clientSocket.getSocketDescriptor();
 
     fileHandler.createDir();
