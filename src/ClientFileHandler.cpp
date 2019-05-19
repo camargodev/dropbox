@@ -4,6 +4,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <iostream>
 
 // ==========================================================================================================
 // Public methods

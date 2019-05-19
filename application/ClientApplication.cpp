@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include <algorithm>
 
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/ClientSyncWrapper.hpp"
@@ -16,6 +17,7 @@ SocketDescriptor serverDescriptor;
 ClientSocketWrapper clientSocket;
 PacketHandler packetHandler;
 ClientFileHandler fileHandler;
+vector<string> filesBeingReceived;
 char* clientUsername;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
@@ -81,19 +83,6 @@ Input proccesCommand(char userInput[INPUT_SIZE]) {
     return input;
 }
 
-string getCorrectFilename(const string& s) { 
-	char* home = getenv("HOME");    
-   char sep = '/';
-   size_t i = s.rfind(sep, s.length());
-   if (i != string::npos) {
-      string f = s.substr(i+1, s.length() - i);
-	  char filename[300];  
-	  ::sprintf(filename, "%s/sync_dir/%s", home, f.c_str()); 
-	 return filename;
-   }
-   return("");
-}
-
 void handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
         case SYNC_FILE:
@@ -103,10 +92,16 @@ void handleReceivedPacket(Packet* packet) {
             break;
         case DOWNLOADED_FILE: {
             string filepath = fileHandler.getFilepath(packet->filename);
-            if(packet->currentPartIndex == 1)
-                fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
-            else
-                fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            if(packet->currentPartIndex == 1) 
+                // fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
+                filesBeingReceived.push_back(string(packet->filename));
+            // } else
+            fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            if (packet->currentPartIndex == packet->numberOfParts) {
+                printf("Finished receiving file %s with %i packets\n", packet->filename, packet->numberOfParts);
+                filesBeingReceived.erase(remove(filesBeingReceived.begin(), 
+                    filesBeingReceived.end(), string(packet->filename)), filesBeingReceived.end());
+            }
             break;
         }
         case SIMPLE_MESSAGE:
@@ -153,22 +148,29 @@ void handleFileDeletion(char* filename) {
         printf("Notify >> Could not delete your file\n");
 }
 
+bool isFileBeingReceived(string filename) {
+    return find(filesBeingReceived.begin(), filesBeingReceived.end(), filename) != filesBeingReceived.end();
+}
+
 void *handleNotifyEvents(void* dummy) {
     Notifier notifier(fileHandler.getDirpath());
     while(true) {
         Action action = notifier.getListenedAction();
-        if (action.type == Notifier::NO_ACTION)
+        if (action.type == Notifier::NO_ACTION || isFileBeingReceived(action.filename))
             continue;
         char actionFilename[FILENAME_SIZE];
-        strcpy(actionFilename, action.filename.c_str());
+        string fullFilename = fileHandler.getFilepath(action.filename.c_str());
+        strcpy(actionFilename, fullFilename.c_str());
         switch(action.type) {
             case Notifier::CREATE:
+                printf("I'll upload %s\n", actionFilename);
                 handleFileUpdate(actionFilename);
                 break;
             case Notifier::EDIT:
                 handleFileUpdate(actionFilename);
                 break;
             case Notifier::DELETE:
+                printf("I'll ask to delete %s\n", actionFilename);
                 handleFileDeletion(actionFilename);
                 break;
             default: 

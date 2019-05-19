@@ -58,7 +58,6 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             else
                 fileHandler.appendFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
 
-
             if (packet->currentPartIndex == packet->numberOfParts) {
                 for (auto openSocket : connectedClient.openSockets) {
                     WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
