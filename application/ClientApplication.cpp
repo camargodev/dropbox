@@ -103,7 +103,10 @@ void handleReceivedPacket(Packet* packet) {
             break;
         case DOWNLOADED_FILE: {
             string filepath = fileHandler.getFilepath(packet->filename);
-            fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            if(packet->currentPartIndex == 1)
+                fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            else
+                fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
             break;
         }
         case SIMPLE_MESSAGE:
@@ -139,21 +142,34 @@ void *handleServerAnswers(void* dummy) {
     }
 }
 
+void handleFileUpdate(const char* filename) {
+    WrappedFile file = fileHandler.getFile(filename);
+    if(!clientSocket.uploadFileToServer(file))
+        printf("Notify >> Could not upload your file\n");
+}
+
+void handleFileDeletion(char* filename) {
+    if(!clientSocket.deleteFile(filename))
+        printf("Notify >> Could not delete your file\n");
+}
+
 void *handleNotifyEvents(void* dummy) {
     Notifier notifier(fileHandler.getDirpath());
     while(true) {
         Action action = notifier.getListenedAction();
         if (action.type == Notifier::NO_ACTION)
             continue;
+        char actionFilename[FILENAME_SIZE];
+        strcpy(actionFilename, action.filename.c_str());
         switch(action.type) {
             case Notifier::CREATE:
-                cout << "I have to create file " << action.filename << endl;
+                handleFileUpdate(actionFilename);
                 break;
             case Notifier::EDIT:
-                cout << "I have to edit file " << action.filename << endl;
+                handleFileUpdate(actionFilename);
                 break;
             case Notifier::DELETE:
-                cout << "I have to delete file " << action.filename << endl;
+                handleFileDeletion(actionFilename);
                 break;
             default: 
                 break;
@@ -181,11 +197,12 @@ int main(int argc, char *argv[])
     serverDescriptor = clientSocket.getSocketDescriptor();
 
     fileHandler.createDir();
-    clientSocket.getSyncDir();
 
     pthread_t connectionThread, notifyThread;
     pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
     pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
+
+    clientSocket.getSyncDir();
 
     bool shouldExit = false;
     while (!shouldExit) {
@@ -210,7 +227,6 @@ int main(int argc, char *argv[])
             case INPUT_DELETE: {
                 if(!clientSocket.deleteFile(input.args.fileToDelete))
                     printf("Could not delete your file\n");
-
                 break;
             }
             case INPUT_LIST_CLIENT: {
@@ -221,9 +237,9 @@ int main(int argc, char *argv[])
             case INPUT_LIST_SERVER:
                 clientSocket.askForFileList();
                 break;
-             case INPUT_GET_SYNC_DIR:
-                 fileHandler.createDir();
-                 break;
+            case INPUT_GET_SYNC_DIR:
+                fileHandler.createDir();
+                break;
         }
     }
 
