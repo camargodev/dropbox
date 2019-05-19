@@ -9,6 +9,7 @@
 #include "../include/ClientSyncWrapper.hpp"
 #include "../include/InputHandler.hpp"
 #include "../include/PacketHandler.hpp"
+#include "../include/Notifier.hpp"
 
 vector<FileForListing> receivedFileList;
 SocketDescriptor serverDescriptor;
@@ -193,13 +194,28 @@ void checkForUpdates() {
         }
     }
 
-//    cout << "Watcher: " << watcher << endl;
 }
 
 void *handleNotifyEvents(void* dummy) {
- 
-    checkForUpdates();
-    
+    Notifier notifier(fileHandler.getDirpath());
+    while(true) {
+        Action action = notifier.getListenedAction();
+        if (action.type == Notifier::NO_ACTION)
+            continue;
+        switch(action.type) {
+            case Notifier::CREATE:
+                cout << "I have to create file " << action.filename << endl;
+                break;
+            case Notifier::EDIT:
+                cout << "I have to edit file " << action.filename << endl;
+                break;
+            case Notifier::DELETE:
+                cout << "I have to delete file " << action.filename << endl;
+                break;
+            default: 
+                break;
+        }
+    }
 }
 
 int main(int argc, char *argv[])
@@ -226,9 +242,8 @@ int main(int argc, char *argv[])
     clientSocket.getSyncDir();
 
     pthread_t connectionThread, notifyThread;
-    printf("Creating thread to get server answers...\n");
     pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
-    // pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
+    pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
 
     bool shouldExit = false;
     while (!shouldExit) {
@@ -244,7 +259,6 @@ int main(int argc, char *argv[])
                 WrappedFile file = fileHandler.getFile(input.args.fileToUpload);
                 if(!clientSocket.uploadFileToServer(file))
                     printf("Could not upload your file\n");
-
                 break;
             }
             case INPUT_DOWNLOAD:
