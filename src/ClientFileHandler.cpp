@@ -4,6 +4,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <iostream>
 
 // ==========================================================================================================
 // Public methods
@@ -111,7 +112,7 @@ vector<FileForListing> ClientFileHandler :: getFiles() {
 // ==========================================================================================================
 vector<FileForListing> ClientFileHandler :: getFilesByDir(const char* dirname) {
     vector <FileForListing> filenames;
-    struct stat* stat_info;
+    // struct stat stat_info;
 
     DIR *dir = opendir(dirname);
     struct dirent *currentFile = readdir(dir);
@@ -120,12 +121,14 @@ vector<FileForListing> ClientFileHandler :: getFilesByDir(const char* dirname) {
 
         if (this->isFilenameValid(currentFile->d_name) && this->isFile(currentFile->d_type)) {
             string fullName = string(dirname) + string(currentFile->d_name);
-            stat(fullName.c_str(), stat_info);
-
+            // stat(fullName.c_str(), &stat_info);
             FileForListing fileForListing(currentFile->d_name);
-            fileForListing.modificationTime = stat_info->st_mtime;
-            fileForListing.accessTime = stat_info->st_atime;
-            fileForListing.creationTime = stat_info->st_ctime;
+            // fileForListing.modificationTime = stat_info.st_mtime;
+            // fileForListing.accessTime = stat_info.st_atime;
+            // fileForListing.creationTime = stat_info.st_ctime;
+            fileForListing.modificationTime = 0;
+            fileForListing.accessTime = 0;
+            fileForListing.creationTime = 0;
             filenames.push_back(fileForListing);
         }
 

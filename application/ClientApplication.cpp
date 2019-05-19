@@ -4,17 +4,20 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include <algorithm>
 
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/ClientSyncWrapper.hpp"
 #include "../include/InputHandler.hpp"
 #include "../include/PacketHandler.hpp"
+#include "../include/Notifier.hpp"
 
 vector<FileForListing> receivedFileList;
 SocketDescriptor serverDescriptor;
 ClientSocketWrapper clientSocket;
 PacketHandler packetHandler;
 ClientFileHandler fileHandler;
+vector<string> filesBeingReceived;
 char* clientUsername;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
@@ -80,19 +83,6 @@ Input proccesCommand(char userInput[INPUT_SIZE]) {
     return input;
 }
 
-string getCorrectFilename(const string& s) { 
-	char* home = getenv("HOME");    
-   char sep = '/';
-   size_t i = s.rfind(sep, s.length());
-   if (i != string::npos) {
-      string f = s.substr(i+1, s.length() - i);
-	  char filename[300];  
-	  ::sprintf(filename, "%s/sync_dir/%s", home, f.c_str()); 
-	 return filename;
-   }
-   return("");
-}
-
 void handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
         case SYNC_FILE:
@@ -102,7 +92,16 @@ void handleReceivedPacket(Packet* packet) {
             break;
         case DOWNLOADED_FILE: {
             string filepath = fileHandler.getFilepath(packet->filename);
+            if(packet->currentPartIndex == 1) 
+                // fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
+                filesBeingReceived.push_back(string(packet->filename));
+            // } else
             fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            if (packet->currentPartIndex == packet->numberOfParts) {
+                printf("Finished receiving file %s with %i packets\n", packet->filename, packet->numberOfParts);
+                filesBeingReceived.erase(remove(filesBeingReceived.begin(), 
+                    filesBeingReceived.end(), string(packet->filename)), filesBeingReceived.end());
+            }
             break;
         }
         case SIMPLE_MESSAGE:
@@ -138,68 +137,46 @@ void *handleServerAnswers(void* dummy) {
     }
 }
 
-using namespace std;
-
-#define EVENT_SIZE  (sizeof (struct inotify_event))
-#define BUF_LEN (EVENT_SIZE + 4096)
-int notify_count = 0;
-char* username;
-
-void dealWithEvent(struct inotify_event *event){
-
-    string name = event->name;
-    if ((event->len == 32) || (name.find(".") == 0)){
-        return;
-    }
-    cout << "========="<<notify_count<<"==========="<<endl;
-    notify_count++;
-    
-    string path_file = fileHandler.getFilepath(event->name);
-    cout << path_file << endl;
-
-    if(event->mask & IN_CLOSE_WRITE || event->mask & IN_MOVED_TO){
-        cout << "CRIOU/EDITOU um arquivo" << endl;
-        WrappedFile file = fileHandler.getFile(path_file.c_str());
-        if (!clientSocket.uploadFileToServer(file))
-            printf("Could not send your file\n");
-
-    }
-    if(event->mask & IN_MOVED_FROM){
-        cout << "DELETOU um arquivo" <<endl;
-        if (!clientSocket.deleteFile(event->name))
-            printf("Could not delete your file\n");
-    }
-
-    cout << "Name: " << event->name << endl;
+void handleFileUpdate(const char* filename) {
+    WrappedFile file = fileHandler.getFile(filename);
+    if(!clientSocket.uploadFileToServer(file))
+        printf("Notify >> Could not upload your file\n");
 }
 
-void checkForUpdates() {
-    string path_name = fileHandler.getDirpath();
-    cout << path_name << endl;
-    int fd = inotify_init1(IN_NONBLOCK);
-    int wd = inotify_add_watch(fd, path_name.c_str(), IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
-    char *buffer[BUF_LEN];
+void handleFileDeletion(char* filename) {
+    if(!clientSocket.deleteFile(filename))
+        printf("Notify >> Could not delete your file\n");
+}
 
-    int size_read, i;
-    while(true) {
-        i = 0;
-        size_read = read(fd, buffer, BUF_LEN);
-        if(size_read > 0) {
-
-            inotify_event* event = (struct inotify_event*) buffer;
-            dealWithEvent(event);
-            i += event->len + EVENT_SIZE;
-
-        }
-    }
-
-//    cout << "Watcher: " << watcher << endl;
+bool isFileBeingReceived(string filename) {
+    return find(filesBeingReceived.begin(), filesBeingReceived.end(), filename) != filesBeingReceived.end();
 }
 
 void *handleNotifyEvents(void* dummy) {
- 
-    checkForUpdates();
-    
+    Notifier notifier(fileHandler.getDirpath());
+    while(true) {
+        Action action = notifier.getListenedAction();
+        if (action.type == Notifier::NO_ACTION || isFileBeingReceived(action.filename))
+            continue;
+        char actionFilename[FILENAME_SIZE];
+        string fullFilename = fileHandler.getFilepath(action.filename.c_str());
+        strcpy(actionFilename, fullFilename.c_str());
+        switch(action.type) {
+            case Notifier::CREATE:
+                printf("I'll upload %s\n", actionFilename);
+                handleFileUpdate(actionFilename);
+                break;
+            case Notifier::EDIT:
+                handleFileUpdate(actionFilename);
+                break;
+            case Notifier::DELETE:
+                printf("I'll ask to delete %s\n", actionFilename);
+                handleFileDeletion(actionFilename);
+                break;
+            default: 
+                break;
+        }
+    }
 }
 
 int main(int argc, char *argv[])
@@ -219,16 +196,15 @@ int main(int argc, char *argv[])
     }
 
     clientUsername = input.username;
-    username = input.username;
     serverDescriptor = clientSocket.getSocketDescriptor();
 
     fileHandler.createDir();
-    clientSocket.getSyncDir();
 
     pthread_t connectionThread, notifyThread;
-    printf("Creating thread to get server answers...\n");
     pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
-    // pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
+    pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
+
+    clientSocket.getSyncDir();
 
     bool shouldExit = false;
     while (!shouldExit) {
@@ -244,7 +220,6 @@ int main(int argc, char *argv[])
                 WrappedFile file = fileHandler.getFile(input.args.fileToUpload);
                 if(!clientSocket.uploadFileToServer(file))
                     printf("Could not upload your file\n");
-
                 break;
             }
             case INPUT_DOWNLOAD:
@@ -254,7 +229,6 @@ int main(int argc, char *argv[])
             case INPUT_DELETE: {
                 if(!clientSocket.deleteFile(input.args.fileToDelete))
                     printf("Could not delete your file\n");
-
                 break;
             }
             case INPUT_LIST_CLIENT: {
@@ -265,9 +239,9 @@ int main(int argc, char *argv[])
             case INPUT_LIST_SERVER:
                 clientSocket.askForFileList();
                 break;
-             case INPUT_GET_SYNC_DIR:
-                 fileHandler.createDir();
-                 break;
+            case INPUT_GET_SYNC_DIR:
+                fileHandler.createDir();
+                break;
         }
     }
 
