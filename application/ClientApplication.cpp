@@ -93,14 +93,17 @@ void handleReceivedPacket(Packet* packet) {
         case DOWNLOADED_FILE: {
             string filepath = fileHandler.getFilepath(packet->filename);
 
-            if(packet->currentPartIndex == 1)
-                fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
-            else
-                fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            if(packet->currentPartIndex == 1) {
+                // fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
+                filesBeingReceived.push_back(string(packet->filename));
+            } //else
+            fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
 
-            if (packet->currentPartIndex == packet->numberOfParts)
+            if (packet->currentPartIndex == packet->numberOfParts) {
                 printf("Finished receiving file %s with %i packets\n", packet->filename, packet->numberOfParts);
-
+                filesBeingReceived.erase(remove(filesBeingReceived.begin(), 
+                    filesBeingReceived.end(), string(packet->filename)), filesBeingReceived.end());
+            }
             break;
         }
         case SIMPLE_MESSAGE:
