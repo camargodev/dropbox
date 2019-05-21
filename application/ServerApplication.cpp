@@ -46,9 +46,10 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                 fileHandler.appendFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
 
             if (packet->currentPartIndex == packet->numberOfParts) {
+                WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
                 for (auto openSocket : connectedClient.openSockets) {
-                    WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
-                    serverSocket.sendSyncFile(openSocket, file);
+                    if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
+                        serverSocket.sendSyncFile(openSocket, file);
                 }
             }
 
@@ -79,7 +80,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
             for (auto openSocket : connectedClient.openSockets) {
                 Packet answer(DELETE_ORDER, packet->filename);
-                serverSocket.sendPacketToClient(openSocket, &answer);
+                if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
+                    serverSocket.sendPacketToClient(openSocket, &answer);
             }
 
             break;
