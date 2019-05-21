@@ -15,20 +15,32 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
 }
 
 Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
-	void* packet = (void *) malloc(sizeof(Packet));
-	size_t packetSize = sizeof(Packet);
-
-    int readBytes = 0;
-    int remainBytes = packetSize;
-    int totalBytesRead = 0;
-
-    while(remainBytes > 0) {
-        readBytes = recv(connectionDescriptor, (packet + totalBytesRead), packetSize, 0);
-        totalBytesRead += readBytes;
-        remainBytes = packetSize - totalBytesRead;
+	int amountOfBytes = sizeof(Packet);
+    void *buffer = (void*) malloc(amountOfBytes);
+    int totalReadBytes = 0, bytesToRead, partialReadBytes;
+    while ((bytesToRead = amountOfBytes - totalReadBytes) != 0) {
+        partialReadBytes = read(socketDescriptor, (buffer + totalReadBytes), bytesToRead);
+        if (partialReadBytes < 0) {
+            printf("Error on reading\n");
+        }
+        totalReadBytes += partialReadBytes;
     }
+    return (Packet*) buffer;
 
-    return (Packet *) packet;
+    // void* packet = (void *) malloc(sizeof(Packet));
+	// size_t packetSize = sizeof(Packet);
+
+    // int readBytes = 0;
+    // int remainBytes = packetSize;
+    // int totalBytesRead = 0;
+
+    // while(remainBytes > 0) {
+    //     readBytes = recv(connectionDescriptor, (packet + totalBytesRead), packetSize, 0);
+    //     totalBytesRead += readBytes;
+    //     remainBytes = packetSize - totalBytesRead;
+    // }
+
+    // return (Packet *) packet;
 }
 
 bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* packet) {
