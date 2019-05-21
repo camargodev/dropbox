@@ -19,7 +19,7 @@ Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
     void *buffer = (void*) malloc(amountOfBytes);
     int totalReadBytes = 0, bytesToRead, partialReadBytes;
     while ((bytesToRead = amountOfBytes - totalReadBytes) != 0) {
-        partialReadBytes = read(socketDescriptor, (buffer + totalReadBytes), bytesToRead);
+        partialReadBytes = read(connectionDescriptor, (buffer + totalReadBytes), bytesToRead);
         if (partialReadBytes < 0) {
             printf("Error on reading\n");
         }
