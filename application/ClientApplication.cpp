@@ -96,12 +96,10 @@ void handleReceivedPacket(Packet* packet) {
 
             if(packet->currentPartIndex == 1) {
                 notifier.stopWatching();
-                // fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
-                // printf("Added %s to being received list\n", packet->filename);
-                // filesBeingReceived.push_back(string(packet->filename));
-            } //else
-            fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
-
+                fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            } else {
+                fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            }
             if (packet->currentPartIndex == packet->numberOfParts) {
                 printf("Finished receiving file %s with %i packets\n", packet->filename, packet->numberOfParts);
                 // filesBeingReceived.erase(remove(filesBeingReceived.begin(), 
