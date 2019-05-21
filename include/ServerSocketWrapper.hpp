@@ -14,10 +14,12 @@ class ServerSocketWrapper : public SocketWrapper {
         bool sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet);
         void setNumberOfClients(int numOfClients);
         Connection acceptClientConnection(); 
-        bool sendFileToClient(SocketDescriptor clientConnectionDescriptor, WrappedFile file);
+        bool sendSyncFile(SocketDescriptor clientConnectionDescriptor, WrappedFile file);
+        bool sendDownloadedFile(SocketDescriptor clientConnectionDescriptor, WrappedFile file);
 
     private:
         sockaddr_in buildAddress(int port);
+        bool sendFileToClient(Command command, SocketDescriptor clientConnectionDescriptor, WrappedFile file);
         int port;
 
 };

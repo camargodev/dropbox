@@ -101,6 +101,12 @@ string ClientFileHandler :: getFilepath(const char *filename) {
     return dirpath + strFilename;
 }
 
+string ClientFileHandler :: getDownloadFilepath(const char *filename) {
+    string dirpath = "./downloads/";
+    string strFilename = this->getFilename(filename);
+    return dirpath + strFilename;
+}
+
 vector<FileForListing> ClientFileHandler :: getFiles() {
     string dirname = this->getDirpath();
     printf("Getting files...\n"); // print to avoid seg fault (do not know why? crazy stuff)

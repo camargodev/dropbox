@@ -3,6 +3,7 @@ CC = g++ -std=c++11
 OBJ = objects
 SRC = src
 APP = application
+DOWN = downloads
 
 all: wrappers handlers notifier cleaner
 	${CC} -g -o server ${APP}/ServerApplication.cpp ${OBJ}/ServerSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ConnectionHandler.o ${OBJ}/ServerFileHandler.o ${OBJ}/ClientFileHandler.o -pthread
@@ -25,6 +26,7 @@ notifier:
 	
 cleaner:
 	mkdir -p ${OBJ}
+	mkdir -p ${DOWN}
 	mv *.o ${OBJ} 
 
 clean:

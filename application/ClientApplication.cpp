@@ -88,10 +88,23 @@ void handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
         case SYNC_FILE:
             printf("I must download file %s\n", packet->filename);
-            if (!clientSocket.askToDownloadFile(packet->filename))
+            if (!clientSocket.getFileFromSyncDir(packet->filename))
                 printf("Could not download your file\n");
             break;
         case DOWNLOADED_FILE: {
+            string filepath = fileHandler.getDownloadFilepath(packet->filename);
+
+            if(packet->currentPartIndex == 1) {
+                fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            } else {
+                fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            }
+            if (packet->currentPartIndex == packet->numberOfParts) {
+                printf("Finished downloading file %s with %i packets\n", packet->filename, packet->numberOfParts);
+            }
+            break;
+        }
+        case FILE_SYNCED: {
             string filepath = fileHandler.getFilepath(packet->filename);
 
             if(packet->currentPartIndex == 1) {
@@ -101,9 +114,7 @@ void handleReceivedPacket(Packet* packet) {
                 fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
             }
             if (packet->currentPartIndex == packet->numberOfParts) {
-                printf("Finished receiving file %s with %i packets\n", packet->filename, packet->numberOfParts);
-                // filesBeingReceived.erase(remove(filesBeingReceived.begin(), 
-                    // filesBeingReceived.end(), string(packet->filename)), filesBeingReceived.end());
+                printf("Finished getting synched file %s with %i packets\n", packet->filename, packet->numberOfParts);
                 notifier.startWatching();
             }
             break;

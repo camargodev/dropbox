@@ -16,6 +16,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool identifyUsername(char* username);
         bool disconnectFromServer();
         bool askToDownloadFile(char* filename);
+        bool getFileFromSyncDir(char* filename);
         bool deleteFile(char* filename);
         bool askForFileList();
         void getSyncDir();

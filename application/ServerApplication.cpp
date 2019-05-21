@@ -22,19 +22,6 @@ bool receivedFromTheCurrentOpenSocket(SocketDescriptor originSocket, SocketDescr
 	return originSocket == openSocket;
 }
 
-string getCorrectFilename(const string& s, string username) { 
-	char* home = getenv("HOME");    
-   char sep = '/';
-   size_t i = s.rfind(sep, s.length());
-   if (i != string::npos) {
-      string f = s.substr(i+1, s.length() - i);
-	  char filename[300];  
-	  ::sprintf(filename, "%s/server_dir/sync_dir_%s/%s", home, username.c_str(), f.c_str()); 
-	 return filename;
-   }
-   return("");
-}
-
 bool handleReceivedPacket(int socket, Packet* packet) {
     ConnectedClient connectedClient = connHandler.getConnectedClientBySocket(socket);
 
@@ -61,7 +48,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             if (packet->currentPartIndex == packet->numberOfParts) {
                 for (auto openSocket : connectedClient.openSockets) {
                     WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
-                    serverSocket.sendFileToClient(openSocket, file);
+                    serverSocket.sendSyncFile(openSocket, file);
                 }
             }
 
@@ -72,9 +59,19 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
 
             WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->payload);
-            serverSocket.sendFileToClient(socket, file);
+            serverSocket.sendDownloadedFile(socket, file);
 
             break;
+        }
+
+        case ASK_FOR_SYNC_FILE: {
+            printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
+
+            WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->payload);
+            serverSocket.sendSyncFile(socket, file);
+
+            break;
+
         }
 
 		case DELETE_REQUISITION: {

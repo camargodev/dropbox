@@ -20,6 +20,7 @@ class ClientFileHandler {
         int deleteFile(const char* pathname);
         int getFileSize(const char* pathname);
         string getFilepath(const char *filename);
+        string getDownloadFilepath(const char *filename);
         vector<FileForListing> getFiles();
 
     protected:
