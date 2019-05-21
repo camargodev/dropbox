@@ -19,6 +19,7 @@ PacketHandler packetHandler;
 ClientFileHandler fileHandler;
 vector<string> filesBeingReceived;
 char* clientUsername;
+Notifier notifier;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
@@ -94,15 +95,18 @@ void handleReceivedPacket(Packet* packet) {
             string filepath = fileHandler.getFilepath(packet->filename);
 
             if(packet->currentPartIndex == 1) {
+                notifier.stopWatching();
                 // fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
-                filesBeingReceived.push_back(string(packet->filename));
+                // printf("Added %s to being received list\n", packet->filename);
+                // filesBeingReceived.push_back(string(packet->filename));
             } //else
             fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
 
             if (packet->currentPartIndex == packet->numberOfParts) {
                 printf("Finished receiving file %s with %i packets\n", packet->filename, packet->numberOfParts);
-                filesBeingReceived.erase(remove(filesBeingReceived.begin(), 
-                    filesBeingReceived.end(), string(packet->filename)), filesBeingReceived.end());
+                // filesBeingReceived.erase(remove(filesBeingReceived.begin(), 
+                    // filesBeingReceived.end(), string(packet->filename)), filesBeingReceived.end());
+                notifier.startWatching();
             }
             break;
         }
@@ -155,7 +159,8 @@ bool isFileBeingReceived(string filename) {
 }
 
 void *handleNotifyEvents(void* dummy) {
-    Notifier notifier(fileHandler.getDirpath());
+    notifier.setDirectory(fileHandler.getDirpath());
+    notifier.startWatching();
     while(true) {
         Action action = notifier.getListenedAction();
         if (action.type == Notifier::NO_ACTION || isFileBeingReceived(action.filename))

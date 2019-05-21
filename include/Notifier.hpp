@@ -39,11 +39,14 @@ public:
     const static EventType EDIT      = 1100;
     const static EventType NO_ACTION = -100;
 
-    Notifier(string dirName);
     Action getListenedAction();
+    void startWatching();
+    void stopWatching();
+    void setDirectory(string dirName);
 private:
     int notifierDescriptor;
-    int watchDirectory(string dirName);
+    int watcherDescriptor;
+    string dirName;
     bool shouldIgnoreEvent(Event event);
     EventType getEventType(Event event);
     Verification verificate();
