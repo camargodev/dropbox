@@ -15,7 +15,7 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
 }
 
 Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
-	char* packet = (char *) malloc(sizeof(Packet));
+	void* packet = (void *) malloc(sizeof(Packet));
 	size_t packetSize = sizeof(Packet);
 
     int readBytes = 0;
