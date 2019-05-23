@@ -30,7 +30,6 @@ cleaner:
 	mv *.o ${OBJ} 
 
 clean:
-	rm ${OBJ}/*.o
-	rm client
-	rm server
-	rm test
+	rm -f ${OBJ}/*.o
+	rm -f client
+	rm -f server
