@@ -7,12 +7,11 @@ DOWN = downloads
 
 all: wrappers handlers notifier cleaner
 	${CC} -g -o server ${APP}/ServerApplication.cpp ${OBJ}/ServerSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ConnectionHandler.o ${OBJ}/ServerFileHandler.o ${OBJ}/ClientFileHandler.o -pthread
-	${CC} -g -o client ${APP}/ClientApplication.cpp ${OBJ}/ClientSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ClientFileHandler.o ${OBJ}/Notifier.o -pthread
+	${CC} -g -o client ${APP}/ClientApplication.cpp ${OBJ}/ClientSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ClientFileHandler.o ${OBJ}/Notifier.o ${OBJ}/InputHandler.o -pthread 
 
 wrappers:
 	${CC} -g -c ${SRC}/SocketWrapper.cpp
 	${CC} -g -c ${SRC}/ClientSocketWrapper.cpp 
-	${CC} -g -c ${SRC}/ServerSocketWrapper.cpp 
 	${CC} -g -c ${SRC}/ServerSocketWrapper.cpp 
 
 handlers:
@@ -20,6 +19,7 @@ handlers:
 	${CC} -g -c ${SRC}/ConnectionHandler.cpp
 	${CC} -g -c ${SRC}/ClientFileHandler.cpp
 	${CC} -g -c ${SRC}/ServerFileHandler.cpp
+	${CC} -g -c ${SRC}/InputHandler.cpp
 
 notifier:
 	${CC} -g -c ${SRC}/Notifier.cpp

@@ -20,6 +20,7 @@ ClientFileHandler fileHandler;
 vector<string> filesBeingReceived;
 char* clientUsername;
 Notifier notifier;
+InputHandler inputHandler;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
@@ -30,58 +31,6 @@ ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc == 4)
         port = stoi(string(argv[3]));
     return ClientInput(argv[1], argv[2], port);
-}
-
-int getCommandCode(char* commandName) {
-    string strCommand = string(commandName);
-    if (strCommand.compare("upload") == 0)
-        return INPUT_UPLOAD;
-    if (strCommand.compare("exit") == 0)
-        return INPUT_EXIT;
-    if (strCommand.compare("download") == 0)
-        return INPUT_DOWNLOAD;
-    if (strCommand.compare("delete") == 0)
-        return INPUT_DELETE;
-    if (strCommand.compare("list_client") == 0)
-        return INPUT_LIST_CLIENT;
-    if (strCommand.compare("list_server") == 0)
-        return INPUT_LIST_SERVER;
-    if (strCommand.compare("get_sync_dir") == 0)
-        return INPUT_GET_SYNC_DIR;
-    return INVALID_INPUT;
-}
-
-char* getNextValueOnInput() {
-    char* filename = strtok(NULL, "\0");
-    int filenameSize = strlen(filename);
-    if (filename[filenameSize - 1] == '\n')
-        filename[filenameSize - 1] = 0;
-    cout << filename <<endl;
-    return filename;
-}
-
-Input proccesCommand(char userInput[INPUT_SIZE]) {
-    char *inputOperation = strtok(userInput, " ");
-    int inputOperationSize = strlen(inputOperation);
-    if (inputOperation[inputOperationSize - 1] == '\n')
-        inputOperation[inputOperationSize - 1] = 0;
-    int inputCode = getCommandCode(inputOperation);
-    Input input(inputCode);
-    switch (inputCode) {
-        case INPUT_UPLOAD:
-            input.args.fileToUpload = getNextValueOnInput();
-            break;
-        case INPUT_DOWNLOAD:
-            input.args.fileToDownload = getNextValueOnInput();
-            break;
-        case INPUT_DELETE:
-            input.args.fileToDelete = getNextValueOnInput();
-            break;
-        case INPUT_LIST_CLIENT:
-            input.args.directory = (char *)fileHandler.getDirname().c_str();
-            break;
-    }
-    return input;
 }
 
 void handleReceivedPacket(Packet* packet) {
@@ -222,11 +171,13 @@ int main(int argc, char *argv[])
 
     clientSocket.getSyncDir();
 
+    inputHandler.setClientSyncDirName((char*) fileHandler.getDirname().c_str());
+
     bool shouldExit = false;
     while (!shouldExit) {
         char inputCommand[INPUT_SIZE] = "";
         fgets(inputCommand, INPUT_SIZE, stdin);
-        Input input = proccesCommand(inputCommand);
+        Input input = inputHandler.processCommand(inputCommand);
         switch (input.inputCode) {
             case INPUT_EXIT:
                 clientSocket.disconnectFromServer();

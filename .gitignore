@@ -15,3 +15,7 @@ bin*
 client 
 server
 \.DS_Store
+
+# Generated folder
+objects/
+downloads/
