@@ -15,9 +15,19 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
 }
 
 Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
-	Packet* packet = (Packet*) malloc(sizeof(Packet));
-    int readBytes = recv(connectionDescriptor, packet, sizeof(Packet), 0);
-    return packet;
+	int packetSize = sizeof(Packet);
+    void *packet = (void*) malloc(packetSize);
+
+    int bytesToRead, alreadyReadBytes;
+    int totalReadBytes = 0;
+
+    while ((bytesToRead = packetSize - totalReadBytes) != 0) {
+        alreadyReadBytes = read(connectionDescriptor, (packet + totalReadBytes), bytesToRead);
+        totalReadBytes += alreadyReadBytes;
+    }
+
+    return (Packet*) packet;
+
 }
 
 bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* packet) {

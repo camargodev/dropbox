@@ -1,8 +1,9 @@
 #include "../include/Notifier.hpp"
 #include <iostream>
 
-Notifier :: Notifier(string dirName) {
-    this->notifierDescriptor = this->watchDirectory(dirName);
+void Notifier :: setDirectory(string dirName) {
+    cout << "I will watch directory " << dirName << endl;
+    this->dirName = dirName;
 }
 
 bool Notifier :: shouldIgnoreEvent(Event event) {
@@ -27,11 +28,13 @@ Action Notifier :: getActionForEvent(Event event){
     return Action(type, string(event->name));
 }
 
-int Notifier :: watchDirectory(string dirName) {
-    cout << "I will watch directory " << dirName << endl;
-    int notifierDescriptor = inotify_init1(IN_NONBLOCK);
-    inotify_add_watch(notifierDescriptor, dirName.c_str(), IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
-    return notifierDescriptor;
+void Notifier :: startWatching() {
+    this->notifierDescriptor = inotify_init1(IN_NONBLOCK);
+    this->watcherDescriptor = inotify_add_watch(notifierDescriptor, dirName.c_str(), IN_CLOSE_WRITE | IN_MOVED_FROM | IN_MOVED_TO);
+}
+
+void Notifier :: stopWatching() {
+    inotify_rm_watch(notifierDescriptor, watcherDescriptor);
 }
 
 Verification Notifier :: verificate() {

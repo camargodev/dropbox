@@ -39,14 +39,22 @@ void ServerSocketWrapper :: setNumberOfClients(int numOfClients) {
     listen(this->socketDescriptor, numOfClients);
 }
 
-bool ServerSocketWrapper :: sendFileToClient(SocketDescriptor clientConnectionDescriptor, WrappedFile file) {
+bool ServerSocketWrapper :: sendSyncFile(SocketDescriptor clientConnectionDescriptor, WrappedFile file) {
+    return sendFileToClient(FILE_SYNCED, clientConnectionDescriptor, file);
+}
+
+bool ServerSocketWrapper :: sendDownloadedFile(SocketDescriptor clientConnectionDescriptor, WrappedFile file) {
+    return sendFileToClient(DOWNLOADED_FILE, clientConnectionDescriptor, file);
+}
+
+bool ServerSocketWrapper :: sendFileToClient(Command command, SocketDescriptor clientConnectionDescriptor, WrappedFile file) {
     if (!file.isFound) {
         printf("Could not find file %s\n", file.filename);
         char errorMessage[PAYLOAD_SIZE] = "File not found";
         Packet packet(ERROR_MESSAGE, file.filename, errorMessage);
         return false;
     }
-    if (!sendFile(DOWNLOADED_FILE, clientConnectionDescriptor, file)) {
+    if (!sendFile(command, clientConnectionDescriptor, file)) {
         printf("Error sending file %s\n", file.filename);
         return false;
     }

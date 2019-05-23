@@ -16,5 +16,7 @@ const Command FILE_LISTING         = 10;
 const Command LIST_REQUISITION     = 11;
 const Command GET_SYNC_DIR         = 1000;
 const Command SYNC_FILE            = 2000;
+const Command ASK_FOR_SYNC_FILE    = 3000;
+const Command FILE_SYNCED          = 4000;
 
 #endif

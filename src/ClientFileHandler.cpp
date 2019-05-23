@@ -101,6 +101,12 @@ string ClientFileHandler :: getFilepath(const char *filename) {
     return dirpath + strFilename;
 }
 
+string ClientFileHandler :: getDownloadFilepath(const char *filename) {
+    string dirpath = "./downloads/";
+    string strFilename = this->getFilename(filename);
+    return dirpath + strFilename;
+}
+
 vector<FileForListing> ClientFileHandler :: getFiles() {
     string dirname = this->getDirpath();
     printf("Getting files...\n"); // print to avoid seg fault (do not know why? crazy stuff)
@@ -112,7 +118,7 @@ vector<FileForListing> ClientFileHandler :: getFiles() {
 // ==========================================================================================================
 vector<FileForListing> ClientFileHandler :: getFilesByDir(const char* dirname) {
     vector <FileForListing> filenames;
-    // struct stat stat_info;
+    struct stat stat_info;
 
     DIR *dir = opendir(dirname);
     struct dirent *currentFile = readdir(dir);
@@ -121,14 +127,13 @@ vector<FileForListing> ClientFileHandler :: getFilesByDir(const char* dirname) {
 
         if (this->isFilenameValid(currentFile->d_name) && this->isFile(currentFile->d_type)) {
             string fullName = string(dirname) + string(currentFile->d_name);
-            // stat(fullName.c_str(), &stat_info);
+            stat(fullName.c_str(), &stat_info);
+
             FileForListing fileForListing(currentFile->d_name);
-            // fileForListing.modificationTime = stat_info.st_mtime;
-            // fileForListing.accessTime = stat_info.st_atime;
-            // fileForListing.creationTime = stat_info.st_ctime;
-            fileForListing.modificationTime = 0;
-            fileForListing.accessTime = 0;
-            fileForListing.creationTime = 0;
+            fileForListing.modificationTime = stat_info.st_mtime;
+            fileForListing.accessTime = stat_info.st_atime;
+            fileForListing.creationTime = stat_info.st_ctime;
+
             filenames.push_back(fileForListing);
         }
 

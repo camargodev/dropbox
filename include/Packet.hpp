@@ -8,7 +8,7 @@
 using namespace std;
 
 const int INITIAL_PART = 0001;
-const int PAYLOAD_SIZE = 64;
+const int PAYLOAD_SIZE = 4096;
 
 struct Packet {
 

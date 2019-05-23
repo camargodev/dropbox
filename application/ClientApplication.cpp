@@ -19,6 +19,7 @@ PacketHandler packetHandler;
 ClientFileHandler fileHandler;
 vector<string> filesBeingReceived;
 char* clientUsername;
+Notifier notifier;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
@@ -87,22 +88,34 @@ void handleReceivedPacket(Packet* packet) {
     switch (packet->command) {
         case SYNC_FILE:
             printf("I must download file %s\n", packet->filename);
-            if (!clientSocket.askToDownloadFile(packet->filename))
+            if (!clientSocket.getFileFromSyncDir(packet->filename))
                 printf("Could not download your file\n");
             break;
         case DOWNLOADED_FILE: {
+            string filepath = fileHandler.getDownloadFilepath(packet->filename);
+
+            if(packet->currentPartIndex == 1) {
+                fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            } else {
+                fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            }
+            if (packet->currentPartIndex == packet->numberOfParts) {
+                printf("Finished downloading file %s with %i packets\n", packet->filename, packet->numberOfParts);
+            }
+            break;
+        }
+        case FILE_SYNCED: {
             string filepath = fileHandler.getFilepath(packet->filename);
 
             if(packet->currentPartIndex == 1) {
-                // fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
-                filesBeingReceived.push_back(string(packet->filename));
-            } //else
-            fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
-
+                notifier.stopWatching();
+                fileHandler.createFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            } else {
+                fileHandler.appendFile(filepath.c_str(), packet->payload, packet->payloadSize);
+            }
             if (packet->currentPartIndex == packet->numberOfParts) {
-                printf("Finished receiving file %s with %i packets\n", packet->filename, packet->numberOfParts);
-                filesBeingReceived.erase(remove(filesBeingReceived.begin(), 
-                    filesBeingReceived.end(), string(packet->filename)), filesBeingReceived.end());
+                printf("Finished getting synched file %s with %i packets\n", packet->filename, packet->numberOfParts);
+                notifier.startWatching();
             }
             break;
         }
@@ -155,7 +168,8 @@ bool isFileBeingReceived(string filename) {
 }
 
 void *handleNotifyEvents(void* dummy) {
-    Notifier notifier(fileHandler.getDirpath());
+    notifier.setDirectory(fileHandler.getDirpath());
+    notifier.startWatching();
     while(true) {
         Action action = notifier.getListenedAction();
         if (action.type == Notifier::NO_ACTION || isFileBeingReceived(action.filename))
@@ -220,6 +234,10 @@ int main(int argc, char *argv[])
                 break;
             case INPUT_UPLOAD: {
                 WrappedFile file = fileHandler.getFile(input.args.fileToUpload);
+                string filepath = fileHandler.getFilepath(file.filename);
+                notifier.stopWatching();
+                fileHandler.createFile(filepath.c_str(), file.content.c_str(), file.filesize);
+                notifier.startWatching();
                 if(!clientSocket.uploadFileToServer(file))
                     printf("Could not upload your file\n");
                 break;
@@ -229,6 +247,10 @@ int main(int argc, char *argv[])
                     printf("Could not download your file\n");
                 break;
             case INPUT_DELETE: {
+                string filepath = fileHandler.getFilepath(input.args.fileToDelete);
+                notifier.stopWatching();
+                fileHandler.deleteFile(filepath.c_str());
+                notifier.startWatching();
                 if(!clientSocket.deleteFile(input.args.fileToDelete))
                     printf("Could not delete your file\n");
                 break;
