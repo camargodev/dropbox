@@ -1,5 +1,7 @@
 #ifndef INPUT_HPP
 #define INPUT_HPP
+#include <string>
+#include <string.h>
 
 using namespace std;
 
@@ -43,6 +45,16 @@ struct ClientInput{
         this->serverHostname = serverHostname;
         this->serverPort = serverPort;
     }
+};
+
+class InputHandler {
+public:
+    void setClientSyncDirName(char* syncDirName);
+    Input processCommand(char userInput[INPUT_SIZE]);
+private:
+    char* clientSyncDirName;
+    int getCommandCode(char* commandName);
+    char* getFilenameOnInput();
 };
 
 #endif
