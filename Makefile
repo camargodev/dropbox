@@ -1,35 +1,49 @@
-CC = g++ -std=c++11
+compile = g++ -std=c++11 -g
 
-OBJ = objects
-SRC = src
-APP = application
-DOWN = downloads
+o = objects
+src = src
+app = application
 
-all: wrappers handlers notifier cleaner
-	${CC} -g -o server ${APP}/ServerApplication.cpp ${OBJ}/ServerSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ConnectionHandler.o ${OBJ}/ServerFileHandler.o ${OBJ}/ClientFileHandler.o -pthread
-	${CC} -g -o client ${APP}/ClientApplication.cpp ${OBJ}/ClientSocketWrapper.o ${OBJ}/SocketWrapper.o ${OBJ}/PacketHandler.o ${OBJ}/ClientFileHandler.o ${OBJ}/Notifier.o ${OBJ}/InputHandler.o -pthread 
+client-dependencies = ${o}/client/
+server-dependencies = ${o}/server/
 
-wrappers:
-	${CC} -g -c ${SRC}/SocketWrapper.cpp
-	${CC} -g -c ${SRC}/ClientSocketWrapper.cpp 
-	${CC} -g -c ${SRC}/ServerSocketWrapper.cpp 
+with-client-dependencies = ${o}/client/*.o
+with-server-dependencies = ${o}/server/*.o
 
-handlers:
-	${CC} -g -c ${SRC}/PacketHandler.cpp
-	${CC} -g -c ${SRC}/ConnectionHandler.cpp
-	${CC} -g -c ${SRC}/ClientFileHandler.cpp
-	${CC} -g -c ${SRC}/ServerFileHandler.cpp
-	${CC} -g -c ${SRC}/InputHandler.cpp
+multi-thread = -pthread
 
-notifier:
-	${CC} -g -c ${SRC}/Notifier.cpp
-	
-cleaner:
-	mkdir -p ${OBJ}
-	mkdir -p ${DOWN}
-	mv *.o ${OBJ} 
+move-all-to = mv *.o
+as = -o
+file = -c
+
+all: dir-gen client server
+	${compile} ${as} server ${app}/ServerApplication.cpp ${with-server-dependencies} ${multi-thread}
+	${compile} ${as} client ${app}/ClientApplication.cpp ${with-client-dependencies} ${multi-thread}
+
+client:
+	${compile} ${file} ${src}/Notifier.cpp
+	${compile} ${file} ${src}/InputHandler.cpp
+	${compile} ${file} ${src}/ClientFileHandler.cpp
+	${compile} ${file} ${src}/SocketWrapper.cpp
+	${compile} ${file} ${src}/ClientSocketWrapper.cpp 
+	${move-all-to} ${client-dependencies}
+
+server:
+	${compile} ${file} ${src}/PacketHandler.cpp
+	${compile} ${file} ${src}/SocketWrapper.cpp
+	${compile} ${file} ${src}/ServerSocketWrapper.cpp 
+	${compile} ${file} ${src}/ConnectionHandler.cpp
+	${compile} ${file} ${src}/ClientFileHandler.cpp
+	${compile} ${file} ${src}/ServerFileHandler.cpp
+	${move-all-to} ${server-dependencies}
+
+dir-gen:
+	mkdir -p ${client-dependencies}
+	mkdir -p ${server-dependencies}
+	mkdir -p downloads
 
 clean:
-	rm -f ${OBJ}/*.o
+	rm -f ${client-dependencies}/*.o
+	rm -f ${client-dependencies}/*.o
 	rm -f client
 	rm -f server
