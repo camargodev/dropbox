@@ -1,4 +1,4 @@
-compile = g++ -std=c++11 -g
+compile = g++ -std=c++11 -g -Wno-pointer-arith
 
 o = objects
 src = src
