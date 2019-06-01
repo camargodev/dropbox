@@ -11,6 +11,7 @@ class ServerSocketWrapper : public SocketWrapper {
         void listenOnPort(int port);
         bool openSocket();
         Packet* receivePacketFromClient(SocketDescriptor clientConnectionDescriptor);
+        Packet* receivePacketFromClient(SocketDescriptor clientConnectionDescriptor, int timeout);
         bool sendPacketToClient(SocketDescriptor clientConnectionDescriptor, Packet* packet);
         void setNumberOfClients(int numOfClients);
         Connection acceptClientConnection(); 

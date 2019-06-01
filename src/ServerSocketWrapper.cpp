@@ -20,7 +20,11 @@ sockaddr_in ServerSocketWrapper :: buildAddress(int port) {
 }
 
 Packet* ServerSocketWrapper :: receivePacketFromClient(SocketDescriptor clientConnectionDescriptor) {
-    Packet* packet = receivePacket(clientConnectionDescriptor);
+    return this->receivePacketFromClient(clientConnectionDescriptor, 0);
+}
+
+Packet* ServerSocketWrapper :: receivePacketFromClient(SocketDescriptor clientConnectionDescriptor, int timeout) {
+    Packet* packet = receivePacket(clientConnectionDescriptor, timeout);
     return packet;
 }
 

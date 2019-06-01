@@ -1,5 +1,6 @@
 #include "../include/SocketWrapper.hpp"
 #include "math.h"
+#include <time.h>
 #include <algorithm>
 
 SocketDescriptor SocketWrapper :: getSocketDescriptor() {
@@ -14,20 +15,26 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
     return address;
 }
 
-Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
+Packet* SocketWrapper :: receivePacket(int connectionDescriptor, int timeout) {
 	int packetSize = sizeof(Packet);
     void *packet = (void*) malloc(packetSize);
 
     int bytesToRead, alreadyReadBytes;
     int totalReadBytes = 0;
+    time_t start = time(0);
 
     while ((bytesToRead = packetSize - totalReadBytes) != 0) {
         alreadyReadBytes = read(connectionDescriptor, (packet + totalReadBytes), bytesToRead);
         totalReadBytes += alreadyReadBytes;
+
+        if(timeout > 0 && totalReadBytes == 0 && time(0) - start >= timeout) return NULL;
     }
 
     return (Packet*) packet;
+}
 
+Packet* SocketWrapper :: receivePacket(int connectionDescriptor) {
+    return this->receivePacket(connectionDescriptor, 0);
 }
 
 bool SocketWrapper :: sendPacket(SocketDescriptor connectionDescriptor, Packet* packet) {

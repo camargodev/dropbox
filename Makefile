@@ -35,6 +35,7 @@ server:
 	${compile} ${file} ${src}/ConnectionHandler.cpp
 	${compile} ${file} ${src}/ClientFileHandler.cpp
 	${compile} ${file} ${src}/ServerFileHandler.cpp
+	${compile} ${file} ${src}/ElectionHandler.cpp
 	${move-all-to} ${server-dependencies}
 
 dir-gen:
