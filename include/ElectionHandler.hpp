@@ -16,16 +16,16 @@ public:
     void receivePacket();
     void notifyLiveness();
 
-    void answer(SocketDescriptor socket);
-    void startElection();
-    void communicateWin();
-
 private:
     unsigned int wins;
     Command waitingFor;
     unsigned int timeout; // in seconds
     ServerSocketWrapper socket;
     vector<SocketDescriptor> *candidates;
+
+    void startElection();
+    void communicateWin();
+    void answer(SocketDescriptor socket);
 
     vector<SocketDescriptor> getEligible();
     void handlePacket(SocketDescriptor socket, Packet *packet);

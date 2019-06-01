@@ -45,13 +45,9 @@ void ElectionHandler :: notifyLiveness() {
     }
 }
 
-void ElectionHandler :: answer(SocketDescriptor socket) {
-    Packet answerPacket;
-    answerPacket.command = ANSWER;
-
-    this->socket.sendPacketToClient(socket, &answerPacket);
-}
-
+// ==========================================================================================================
+// Private methods
+// ==========================================================================================================
 void ElectionHandler :: startElection() {
     if (this->waitingFor == ANSWER) return;
 
@@ -75,9 +71,13 @@ void ElectionHandler :: communicateWin() {
         this->socket.sendPacketToClient(candidate, &coordinatorPacket);
 }
 
-// ==========================================================================================================
-// Private methods
-// ==========================================================================================================
+void ElectionHandler :: answer(SocketDescriptor socket) {
+    Packet answerPacket;
+    answerPacket.command = ANSWER;
+
+    this->socket.sendPacketToClient(socket, &answerPacket);
+}
+
 vector<SocketDescriptor> ElectionHandler :: getEligible() {
     vector<SocketDescriptor> eligible;
     SocketDescriptor thisCandidate = this->socket.getSocketDescriptor();
