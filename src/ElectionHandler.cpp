@@ -91,10 +91,10 @@ vector<SocketDescriptor> ElectionHandler :: getEligible() {
 }
 
 void ElectionHandler :: handlePacket(SocketDescriptor socket, Packet *packet) {
-    switch (this->waitingFor) {
-        case ANSWER:
+    if (packet == NULL) {
 
-            if (packet == NULL) {
+        switch (this->waitingFor) {
+            case ANSWER:
                 this->wins++;
 
                 if (this->wins == (*(this->candidates)).size()) {
@@ -103,26 +103,31 @@ void ElectionHandler :: handlePacket(SocketDescriptor socket, Packet *packet) {
                     // TODO: config new coordinator
                 }
 
-            } else if (packet->command == ANSWER) {
-                this->waitForCoordinator();
-            }
+                break;
 
-            break;
-
-        case ELECTION:
-        case COORDINATOR:
-
-            if (packet == NULL) {
+            case ELECTION:
+            case COORDINATOR:
                 this->startElection();
-            } else if (packet->command == ELECTION) {
+                break;
+        }
+
+    } else {
+
+        switch (packet->command) {
+            case ANSWER:
+                this->waitForCoordinator();
+                break;
+
+            case ELECTION:
                 this->answer(socket);
                 this->startElection();
-            } else if (packet->command == COORDINATOR) {
-                this->waitForElection();
-                // TODO: do stuff to change coordination
-            }
+                break;
 
-            break;
+            case COORDINATOR:
+                // TODO: do stuff to change coordination
+                this->waitForElection();
+                break;
+        }
     }
 }
 
