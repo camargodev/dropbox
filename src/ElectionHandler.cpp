@@ -33,7 +33,7 @@ void ElectionHandler :: receivePacket() {
 }
 
 void ElectionHandler :: notifyLiveness() {
-    Packet imAlivePacket = new Packet();
+    Packet imAlivePacket;
     imAlivePacket.command = IM_ALIVE;
 
     while (true) {
@@ -41,12 +41,12 @@ void ElectionHandler :: notifyLiveness() {
         for (auto candidate : *(this->candidates))
             this->socket.sendPacketToClient(candidate, &imAlivePacket);
 
-        this.wait(MIN_TIMEOUT);
+        this->wait(MIN_TIMEOUT);
     }
 }
 
 void ElectionHandler :: answer(SocketDescriptor socket) {
-    Packet answerPacket = new Packet();
+    Packet answerPacket;
     answerPacket.command = ANSWER;
 
     this->socket.sendPacketToClient(socket, &answerPacket);
@@ -57,7 +57,7 @@ void ElectionHandler :: startElection() {
 
     vector<SocketDescriptor> eligible = this->getEligible();
 
-    Packet electionPacket = new Packet();
+    Packet electionPacket;
     electionPacket.command = ELECTION;
 
     for (auto eligible : eligible)
@@ -68,7 +68,7 @@ void ElectionHandler :: startElection() {
 }
 
 void ElectionHandler :: communicateWin() {
-    Packet coordinatorPacket = new Packet();
+    Packet coordinatorPacket;
     coordinatorPacket.command = COORDINATOR;
 
     for (auto candidate : *(this->candidates))
