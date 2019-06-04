@@ -23,5 +23,6 @@ const Command ANSWER               = 20000;
 const Command COORDINATOR          = 30000;
 const Command IS_ALIVE             = 40000;
 const Command IM_ALIVE             = 50000;
+const Command MIRROR               = 12345;
 
 #endif

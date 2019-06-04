@@ -32,6 +32,7 @@ server:
 	${compile} ${file} ${src}/PacketHandler.cpp
 	${compile} ${file} ${src}/SocketWrapper.cpp
 	${compile} ${file} ${src}/ServerSocketWrapper.cpp 
+	${compile} ${file} ${src}/ClientSocketWrapper.cpp 
 	${compile} ${file} ${src}/ConnectionHandler.cpp
 	${compile} ${file} ${src}/ClientFileHandler.cpp
 	${compile} ${file} ${src}/ServerFileHandler.cpp

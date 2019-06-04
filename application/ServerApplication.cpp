@@ -2,19 +2,20 @@
 #include <iostream>
 #include <pthread.h>
 #include "../include/ServerSocketWrapper.hpp"
-#include "../include/PacketHandler.hpp"
+#include "../include/ClientSocketWrapper.hpp"
 #include "../include/ConnectionHandler.hpp"
 #include "../include/ServerFileHandler.hpp"
 
-PacketHandler packetHandler;
 ConnectionHandler connHandler;
 ServerSocketWrapper serverSocket;
+ClientSocketWrapper clientSocket;
 ServerFileHandler fileHandler;
+vector<SocketDescriptor> mirrors;
+bool isMainServer = true;
 
 int getServerPort(int argc, char *argv[]) {
-	int port = SocketWrapper::DEFAULT_PORT;
-	if (argc == 2)
-        port = stoi(string(argv[1]));
+	int port = stoi(string(argv[1]));
+    printf("I will answer on port %i\n", port);
 	return port;
 }
 
@@ -28,7 +29,22 @@ bool handleReceivedPacket(int socket, Packet* packet) {
     bool shouldKeepExecuting = true;
 	string filenameToSave;
 
+    printf("I received a packet!!\n");
 	switch (packet->command) {
+        case MIRROR: {
+            printf("I will send everything to my mirror on socket %i\n", socket);
+            mirrors.push_back(socket);
+            Packet packet(SIMPLE_MESSAGE, 40, (char*) "Response from server");
+            if (serverSocket.sendPacketToClient(socket, &packet)) {
+                printf("I sent a ack to my mirror\n");
+            }
+            break;
+        }
+
+        case SIMPLE_MESSAGE:
+            printf("I received a simple message: %s\n", packet->payload);
+            break;
+
 		case GET_SYNC_DIR: {
             printf("Client %s requested sync dir\n", connectedClient.username.c_str());
             vector <FileForListing> filesOnUserDirectory = fileHandler.getFiles(connectedClient.username.c_str());
@@ -45,12 +61,16 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             else
                 fileHandler.appendFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
 
-            if (packet->currentPartIndex == packet->numberOfParts) {
-                WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
-                for (auto openSocket : connectedClient.openSockets) {
-                    if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
-                        serverSocket.sendSyncFile(openSocket, file);
+            if (isMainServer) {
+                if (packet->currentPartIndex == packet->numberOfParts) {
+                    WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
+                    for (auto openSocket : connectedClient.openSockets) {
+                        if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
+                            serverSocket.sendSyncFile(openSocket, file);
+                    }
                 }
+                for (auto mirror : mirrors)
+                    serverSocket.sendPacketToClient(mirror, packet);
             }
 
             break;
@@ -78,12 +98,15 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 		case DELETE_REQUISITION: {
             fileHandler.deleteFile(connectedClient.username.c_str(), packet->filename);
 
-            for (auto openSocket : connectedClient.openSockets) {
+            if (isMainServer) {
                 Packet answer(DELETE_ORDER, packet->filename);
-                if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
-                    serverSocket.sendPacketToClient(openSocket, &answer);
+                for (auto openSocket : connectedClient.openSockets) {
+                    if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
+                        serverSocket.sendPacketToClient(openSocket, &answer);
+                }
+                for (auto mirror : mirrors) 
+                    serverSocket.sendPacketToClient(mirror, packet);
             }
-
             break;
         }
 
@@ -93,6 +116,13 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             fileHandler.createClientDir(packet->payload);
             connHandler.addSocketToClient(packet->payload, socket);
 
+            if (isMainServer) {
+                printf("I will send this identification to all my mirrors\n");
+                for (auto mirror : mirrors) {
+                    if (serverSocket.sendPacketToClient(mirror, packet))
+                        printf("Sent with success to mirror %i\n", mirror);                    
+                }
+            }
             break;
         }
 
@@ -101,6 +131,10 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
             connHandler.removeSocketFromUser(connectedClient.username, socket);
             shouldKeepExecuting = false;
+
+            if (isMainServer) 
+                for (auto mirror : mirrors)
+                    serverSocket.sendPacketToClient(mirror, packet);
 
             break;
         }
@@ -121,15 +155,41 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 void *handleNewConnection(void *voidSocket) {
 	int socket = *(int*) voidSocket;
 	bool shouldKeepExecuting = true;
+    printf("I'm waiting for the main server on %i\n", socket);
 	while(shouldKeepExecuting) {
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
 		shouldKeepExecuting = handleReceivedPacket(socket, packet);
 	}
 }
 
+bool isMirror(int argc) {
+    return argc > 3;
+}
+
+void connectAsMirror(char *argv[]) {
+    if (!clientSocket.setServer(string(argv[2]), stoi(string(argv[3])))) {
+        printf("Error seeting server\n");
+        return;
+    }
+    if (!clientSocket.connectToServer()) {
+        printf("Error connecting to main server\n"); 
+        return;
+    }
+    if (!clientSocket.identifyAsMirror()) {
+        printf("Error sending identification\n");
+        return;
+    }
+    isMainServer = false;
+    printf("I will be a mirror of %s:%s\n", argv[2], argv[3]);
+}
+
 int main(int argc, char *argv[]) {
 
 	serverSocket.listenOnPort(getServerPort(argc, argv));
+    if (isMirror(argc)) {
+        connectAsMirror(argv);
+        fileHandler.configAsBackup();
+    }
 
 	if (!serverSocket.openSocket()) {
 		printf("Could not open socket. Try another port\n");
@@ -139,14 +199,20 @@ int main(int argc, char *argv[]) {
 	serverSocket.setNumberOfClients(5);
 	fileHandler.createDir();
 
-	while (true) {
+    if (isMainServer) {
+        while (true) {
+            pthread_t connectionThread;
+            Connection clientConnection = serverSocket.acceptClientConnection();
+            int descriptor = clientConnection.descriptor;
+            pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
 
-		pthread_t connectionThread;
-		Connection clientConnection = serverSocket.acceptClientConnection();
-		int descriptor = clientConnection.descriptor;
-		pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
-
-	}
+        }
+    } else {
+        pthread_t connectionThread;
+        int descriptor = clientSocket.getSocketDescriptor();
+        pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
+        pthread_join(connectionThread, NULL);
+    }
 
 	serverSocket.closeSocket();
 	return 0;

@@ -67,6 +67,11 @@ bool ClientSocketWrapper :: askToDownloadFile(char* filename) {
     return sendPacketToServer(&packet);
 }
 
+bool ClientSocketWrapper :: identifyAsMirror() {
+    Packet packet(MIRROR);
+    return sendPacketToServer(&packet);
+}
+
 bool ClientSocketWrapper :: getFileFromSyncDir(char* filename) {
     Packet packet(ASK_FOR_SYNC_FILE, sizeof(filename), filename);
     return sendPacketToServer(&packet);

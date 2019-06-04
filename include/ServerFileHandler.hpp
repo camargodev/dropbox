@@ -7,6 +7,7 @@ class ServerFileHandler : public ClientFileHandler {
     public:
         ServerFileHandler();
         void createClientDir(const char *username);
+        void configAsBackup();
 
         // Overloaded from superclass
         void createFile(const char* username, const char* filename, const char* content, int size);

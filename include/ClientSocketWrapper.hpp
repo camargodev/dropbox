@@ -20,6 +20,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool deleteFile(char* filename);
         bool askForFileList();
         void getSyncDir();
+        bool identifyAsMirror();
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);
