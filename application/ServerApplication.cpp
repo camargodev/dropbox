@@ -155,15 +155,37 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 void *handleNewConnection(void *voidSocket) {
 	int socket = *(int*) voidSocket;
 	bool shouldKeepExecuting = true;
-    printf("I'm waiting for the main server on %i\n", socket);
-	while(shouldKeepExecuting) {
+    while(shouldKeepExecuting) {
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
 		shouldKeepExecuting = handleReceivedPacket(socket, packet);
 	}
 }
 
+void *handleMainServerAnswers(void *voidSocket) {
+	int socket = *(int*) voidSocket;
+	while(!isMainServer) {
+        printf("I'm waiting for the main server on %i\n", socket);
+		Packet* packet = serverSocket.receivePacketFromClient(socket);
+		handleReceivedPacket(socket, packet);
+	}
+}
+
 bool isMirror(int argc) {
     return argc > 3;
+}
+
+void processNewClientConnected() {
+    pthread_t connectionThread;
+    Connection clientConnection = serverSocket.acceptClientConnection();
+    int descriptor = clientConnection.descriptor;
+    pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
+}
+
+void processMainServerAnswers() {
+    pthread_t connectionThread;
+    int descriptor = clientSocket.getSocketDescriptor();
+    pthread_create(&connectionThread, NULL, handleMainServerAnswers, &descriptor);
+    pthread_join(connectionThread, NULL);
 }
 
 void connectAsMirror(char *argv[]) {
@@ -199,21 +221,13 @@ int main(int argc, char *argv[]) {
 	serverSocket.setNumberOfClients(5);
 	fileHandler.createDir();
 
-    if (isMainServer) {
-        while (true) {
-            pthread_t connectionThread;
-            Connection clientConnection = serverSocket.acceptClientConnection();
-            int descriptor = clientConnection.descriptor;
-            pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
 
-        }
-    } else {
-        pthread_t connectionThread;
-        int descriptor = clientSocket.getSocketDescriptor();
-        pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
-        pthread_join(connectionThread, NULL);
-    }
-
+    while (true) 
+        if (isMainServer) 
+            processNewClientConnected();    
+        else 
+            processMainServerAnswers();
+    
 	serverSocket.closeSocket();
 	return 0;
 }
