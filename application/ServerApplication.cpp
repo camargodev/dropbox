@@ -5,13 +5,13 @@
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/ConnectionHandler.hpp"
 #include "../include/ServerFileHandler.hpp"
+#include "../include/ReplicationHelper.hpp"
 
 ConnectionHandler connHandler;
 ServerSocketWrapper serverSocket;
 ClientSocketWrapper clientSocket;
 ServerFileHandler fileHandler;
-vector<SocketDescriptor> mirrors;
-bool isMainServer = true;
+ReplicationHelper replicationHelper;
 
 int getServerPort(int argc, char *argv[]) {
 	int port = stoi(string(argv[1]));
@@ -33,7 +33,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 	switch (packet->command) {
         case MIRROR: {
             printf("I will send everything to my mirror on socket %i\n", socket);
-            mirrors.push_back(socket);
+            replicationHelper.addMirror(socket);
             Packet packet(SIMPLE_MESSAGE, 40, (char*) "Response from server");
             if (serverSocket.sendPacketToClient(socket, &packet)) {
                 printf("I sent a ack to my mirror\n");
@@ -61,7 +61,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             else
                 fileHandler.appendFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
 
-            if (isMainServer) {
+            if (replicationHelper.isMainServer()) {
                 if (packet->currentPartIndex == packet->numberOfParts) {
                     WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
                     for (auto openSocket : connectedClient.openSockets) {
@@ -69,7 +69,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                             serverSocket.sendSyncFile(openSocket, file);
                     }
                 }
-                for (auto mirror : mirrors)
+                for (auto mirror : replicationHelper.getMirrors())
                     serverSocket.sendPacketToClient(mirror, packet);
             }
 
@@ -98,13 +98,13 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 		case DELETE_REQUISITION: {
             fileHandler.deleteFile(connectedClient.username.c_str(), packet->filename);
 
-            if (isMainServer) {
+            if (replicationHelper.isMainServer()) {
                 Packet answer(DELETE_ORDER, packet->filename);
                 for (auto openSocket : connectedClient.openSockets) {
                     if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
                         serverSocket.sendPacketToClient(openSocket, &answer);
                 }
-                for (auto mirror : mirrors) 
+                for (auto mirror : replicationHelper.getMirrors()) 
                     serverSocket.sendPacketToClient(mirror, packet);
             }
             break;
@@ -116,9 +116,9 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             fileHandler.createClientDir(packet->payload);
             connHandler.addSocketToClient(packet->payload, socket);
 
-            if (isMainServer) {
+            if (replicationHelper.isMainServer()) {
                 printf("I will send this identification to all my mirrors\n");
-                for (auto mirror : mirrors) {
+                for (auto mirror : replicationHelper.getMirrors()) {
                     if (serverSocket.sendPacketToClient(mirror, packet))
                         printf("Sent with success to mirror %i\n", mirror);                    
                 }
@@ -132,8 +132,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             connHandler.removeSocketFromUser(connectedClient.username, socket);
             shouldKeepExecuting = false;
 
-            if (isMainServer) 
-                for (auto mirror : mirrors)
+            if (replicationHelper.isMainServer()) 
+                for (auto mirror : replicationHelper.getMirrors())
                     serverSocket.sendPacketToClient(mirror, packet);
 
             break;
@@ -163,7 +163,7 @@ void *handleNewConnection(void *voidSocket) {
 
 void *handleMainServerAnswers(void *voidSocket) {
 	int socket = *(int*) voidSocket;
-	while(!isMainServer) {
+	while(!replicationHelper.isMainServer()) {
         printf("I'm waiting for the main server on %i\n", socket);
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
 		handleReceivedPacket(socket, packet);
@@ -201,15 +201,16 @@ void connectAsMirror(char *argv[]) {
         printf("Error sending identification\n");
         return;
     }
-    isMainServer = false;
     printf("I will be a mirror of %s:%s\n", argv[2], argv[3]);
 }
 
 int main(int argc, char *argv[]) {
 
 	serverSocket.listenOnPort(getServerPort(argc, argv));
+    
     if (isMirror(argc)) {
         connectAsMirror(argv);
+        replicationHelper.setAsBackupServer();
         fileHandler.configAsBackup();
     }
 
@@ -223,7 +224,7 @@ int main(int argc, char *argv[]) {
 
 
     while (true) 
-        if (isMainServer) 
+        if (replicationHelper.isMainServer()) 
             processNewClientConnected();    
         else 
             processMainServerAnswers();
