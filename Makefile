@@ -16,7 +16,7 @@ move-all-to = mv *.o
 as = -o
 file = -c
 
-all: dir-gen client server
+all: clean dir-gen client server
 	${compile} ${as} server ${app}/ServerApplication.cpp ${with-server-dependencies} ${multi-thread}
 	${compile} ${as} client ${app}/ClientApplication.cpp ${with-client-dependencies} ${multi-thread}
 
@@ -37,6 +37,7 @@ server:
 	${compile} ${file} ${src}/ClientFileHandler.cpp
 	${compile} ${file} ${src}/ServerFileHandler.cpp
 	${compile} ${file} ${src}/ElectionHandler.cpp
+	${compile} ${file} ${src}/ReplicationHelper.cpp
 	${move-all-to} ${server-dependencies}
 
 dir-gen:
