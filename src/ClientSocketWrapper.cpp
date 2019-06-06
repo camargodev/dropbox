@@ -39,6 +39,7 @@ bool ClientSocketWrapper :: identifyUsername(char* username) {
     strcpy(packet->filename, "");
     packet->currentPartIndex = 1;
     packet->numberOfParts = 1;
+    strcpy(packet->ip, this->addressGetter.getIP());
     return sendPacketToServer(packet);
 }
 

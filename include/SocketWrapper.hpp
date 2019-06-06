@@ -11,7 +11,7 @@
 #include "Connection.hpp"
 #include "Packet.hpp"
 #include "ClientFileHandler.hpp"
-
+#include "AddressGetter.hpp"
 
 using namespace std;
 
@@ -35,6 +35,7 @@ class SocketWrapper {
 
     protected:
         SocketDescriptor socketDescriptor;
+        AddressGetter addressGetter;
 
         sockaddr_in buildDefaultAddress(int port);
         Packet* receivePacket(SocketDescriptor connectionDescriptor);

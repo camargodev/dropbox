@@ -3,6 +3,7 @@
 
 #include "FileWrapper.hpp"
 #include "Command.hpp"
+#include "AddressGetter.hpp"
 #include <string.h>
 
 using namespace std;
@@ -18,6 +19,7 @@ struct Packet {
     int numberOfParts;
     int payloadSize;
     char payload[PAYLOAD_SIZE];
+    char ip[INET_ADDRSTRLEN];
     Time modificationTime;
     Time accessTime;
     Time creationTime;

@@ -111,7 +111,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
 		case IDENTIFICATION: {
-            printf("\nClient %s connected on socket %i\n", packet->payload, socket);
+            printf("\nClient %s connected on socket %i with IP %s\n", packet->payload, socket, packet->ip);
 
             fileHandler.createClientDir(packet->payload);
             connHandler.addSocketToClient(packet->payload, socket);
