@@ -4,23 +4,29 @@
 #include <vector>
 #include "ServerSocketWrapper.hpp"
 
-#define MAX_TIMEOUT 5
-#define MIN_TIMEOUT 3
+using Candidate = SocketDescriptor;
+
+extern identifyAsCoordinator();
+extern setCoordinator(SocketDescriptor socketDescriptor);
 
 class ElectionHandler {
 
 public:
-    ElectionHandler(ServerSocketWrapper socket, vector<SocketDescriptor> *candidates);
+    ElectionHandler(ServerSocketWrapper serverSocket, SocketDescriptor primarySocket, vector<SocketDescriptor> *candidates);
 
     // Threadable
     void receivePacket();
     void notifyLiveness();
+    void receiveLiveness();
+    void setPrimarySocket(SocketDescriptor socketDescriptor);
 
 private:
     unsigned int wins;
     Command waitingFor;
-    unsigned int timeout; // in seconds
-    ServerSocketWrapper socket;
+    unsigned int max_timeout; // in seconds
+    unsigned int min_timeout; // in seconds
+    SocketDescriptor primarySocket;
+    ServerSocketWrapper serverSocket;
     vector<SocketDescriptor> *candidates;
 
     void startElection();
@@ -28,11 +34,14 @@ private:
     void answer(SocketDescriptor socket);
 
     vector<SocketDescriptor> getEligible();
-    void handlePacket(SocketDescriptor socket, Packet *packet);
+    ElectionResult handlePacket(SocketDescriptor socket, Packet *packet);
 
     void setTimeout();
 
     void wait();
+    void waitMaxTimeout();
+    void waitMinTimeout();
+
     void waitForAnswer();
     void waitForElection();
     void waitForCoordinator();
