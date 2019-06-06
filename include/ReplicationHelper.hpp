@@ -2,7 +2,20 @@
 #define REPLICATION_HELPER_HPP
 
 #include "SocketWrapper.hpp"
+#include "AddressGetter.hpp"
 #include <semaphore.h>
+
+struct Mirror {
+    int socket;
+    char ip[INET_ADDRSTRLEN];
+    int port;
+
+    Mirror(int socket, char ip[INET6_ADDRSTRLEN], int port) {
+        this->socket = socket;
+        strcpy(this->ip, ip);
+        this->port = port;
+    }
+};
 
 class ReplicationHelper {
 public:
@@ -10,10 +23,10 @@ public:
     bool isMainServer();
     void setAsMainServer();
     void setAsBackupServer();
-    void addMirror(SocketDescriptor mirrorSocket);
-    vector<SocketDescriptor> getMirrors();
+    void addMirror(Mirror mirro);
+    vector<Mirror> getMirrors();
 private:
-    vector<SocketDescriptor> mirrors;
+    vector<Mirror> mirrors;
     bool isTheMainServer;
     sem_t processing;
 

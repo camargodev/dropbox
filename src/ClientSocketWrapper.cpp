@@ -68,8 +68,10 @@ bool ClientSocketWrapper :: askToDownloadFile(char* filename) {
     return sendPacketToServer(&packet);
 }
 
-bool ClientSocketWrapper :: identifyAsMirror() {
+bool ClientSocketWrapper :: identifyAsMirror(int port) {
     Packet packet(MIRROR);
+    strcpy(packet.ip, this->addressGetter.getIP());
+    packet.port = port;
     return sendPacketToServer(&packet);
 }
 

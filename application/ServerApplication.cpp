@@ -32,8 +32,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
     printf("I received a packet!!\n");
 	switch (packet->command) {
         case MIRROR: {
-            printf("I will send everything to my mirror on socket %i\n", socket);
-            replicationHelper.addMirror(socket);
+            printf("I will send everything to my mirror on socket %i in %s:%i\n", socket, packet->ip, packet->port);
+            replicationHelper.addMirror(Mirror(socket, packet->ip, packet->port));
             Packet packet(SIMPLE_MESSAGE, 40, (char*) "Response from server");
             if (serverSocket.sendPacketToClient(socket, &packet)) {
                 printf("I sent a ack to my mirror\n");
@@ -70,7 +70,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                     }
                 }
                 for (auto mirror : replicationHelper.getMirrors())
-                    serverSocket.sendPacketToClient(mirror, packet);
+                    serverSocket.sendPacketToClient(mirror.socket, packet);
             }
 
             break;
@@ -105,7 +105,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                         serverSocket.sendPacketToClient(openConnection.socket, &answer);
                 }
                 for (auto mirror : replicationHelper.getMirrors()) 
-                    serverSocket.sendPacketToClient(mirror, packet);
+                    serverSocket.sendPacketToClient(mirror.socket, packet);
             }
             break;
         }
@@ -119,8 +119,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             if (replicationHelper.isMainServer()) {
                 printf("I will send this identification to all my mirrors\n");
                 for (auto mirror : replicationHelper.getMirrors()) {
-                    if (serverSocket.sendPacketToClient(mirror, packet))
-                        printf("Sent with success to mirror %i\n", mirror);                    
+                    if (serverSocket.sendPacketToClient(mirror.socket, packet))
+                        printf("Sent with success to mirror %s:%i\n", mirror.ip, mirror.port);                    
                 }
             }
             break;
@@ -134,7 +134,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
             if (replicationHelper.isMainServer()) 
                 for (auto mirror : replicationHelper.getMirrors())
-                    serverSocket.sendPacketToClient(mirror, packet);
+                    serverSocket.sendPacketToClient(mirror.socket, packet);
 
             break;
         }
@@ -197,7 +197,7 @@ void connectAsMirror(char *argv[]) {
         printf("Error connecting to main server\n"); 
         return;
     }
-    if (!clientSocket.identifyAsMirror()) {
+    if (!clientSocket.identifyAsMirror(stoi(string(argv[1])))) {
         printf("Error sending identification\n");
         return;
     }

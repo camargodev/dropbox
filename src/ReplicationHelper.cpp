@@ -17,12 +17,12 @@ void ReplicationHelper :: setAsBackupServer() {
     this->isTheMainServer = false;
 }
 
-void ReplicationHelper :: addMirror(SocketDescriptor mirrorSocket) {
+void ReplicationHelper :: addMirror(Mirror mirror) {
     sem_wait(&processing);
-    this->mirrors.push_back(mirrorSocket);
+    this->mirrors.push_back(mirror);
     sem_post(&processing);
 }
 
-vector<SocketDescriptor>  ReplicationHelper :: getMirrors() {
+vector<Mirror>  ReplicationHelper :: getMirrors() {
     return this->mirrors;
 }

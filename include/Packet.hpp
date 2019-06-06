@@ -20,6 +20,7 @@ struct Packet {
     int payloadSize;
     char payload[PAYLOAD_SIZE];
     char ip[INET_ADDRSTRLEN];
+    int port;
     Time modificationTime;
     Time accessTime;
     Time creationTime;
