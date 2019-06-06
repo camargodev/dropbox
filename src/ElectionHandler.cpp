@@ -1,5 +1,6 @@
 #include <vector>
 #include <time.h>
+#include <math.h>
 #include <unistd.h>
 #include "../include/Packet.hpp"
 #include "../include/Command.hpp"
@@ -11,10 +12,11 @@ using namespace std;
 // ==========================================================================================================
 // Public methods
 // ==========================================================================================================
-ElectionHandler :: ElectionHandler(ServerSocketWrapper socket, vector<SocketDescriptor> *candidates) {
+ElectionHandler :: ElectionHandler(ServerSocketWrapper serverSocket, SocketDescriptor primarySocket, vector<Candidate> *candidates) {
     this->waitingFor = ELECTION;
     this->candidates = candidates;
-    this->socket = socket;
+    this->serverSocket = serverSocket;
+    this->primarySocket = primarySocket;
 
     this->setTimeout();
 }
@@ -23,12 +25,12 @@ void ElectionHandler :: receivePacket() {
     Packet *packet;
 
     while (true) {
+        this->waitMaxTimeout();
 
         for (auto candidate : *(this->candidates)) {
-            packet = this->socket.receivePacketFromClient(candidate, 1);
+            packet = this->serverSocket.receivePacketFromClient(candidate, 1);
             this->handlePacket(candidate, packet);
         }
-
     }
 }
 
@@ -39,9 +41,22 @@ void ElectionHandler :: notifyLiveness() {
     while (true) {
 
         for (auto candidate : *(this->candidates))
-            this->socket.sendPacketToClient(candidate, &imAlivePacket);
+            this->serverSocket.sendPacketToClient(candidate, &imAlivePacket);
 
-        this->wait(MIN_TIMEOUT);
+        this->waitMinTimeout();
+    }
+}
+
+void ElectionHandler :: receiveLiveness() {
+    Packet *packet;
+
+    while (true) {
+        this->waitMinTimeout();
+
+        if(this->waitingFor == ELECTION) {
+            packet = this->serverSocket.receivePacketFromClient(this->primarySocket, 1);
+            if (packet == NULL) this->startElection();
+        }
     }
 }
 
@@ -51,13 +66,13 @@ void ElectionHandler :: notifyLiveness() {
 void ElectionHandler :: startElection() {
     if (this->waitingFor == ANSWER) return;
 
-    vector<SocketDescriptor> eligible = this->getEligible();
+    vector<Candidate> eligible = this->getEligible();
 
     Packet electionPacket;
     electionPacket.command = ELECTION;
 
     for (auto eligible : eligible)
-        this->socket.sendPacketToClient(eligible, &electionPacket);
+        this->serverSocket.sendPacketToClient(eligible, &electionPacket);
 
     this->wins = 0;
     this->waitForAnswer();
@@ -68,19 +83,19 @@ void ElectionHandler :: communicateWin() {
     coordinatorPacket.command = COORDINATOR;
 
     for (auto candidate : *(this->candidates))
-        this->socket.sendPacketToClient(candidate, &coordinatorPacket);
+        this->serverSocket.sendPacketToClient(candidate, &coordinatorPacket);
 }
 
 void ElectionHandler :: answer(SocketDescriptor socket) {
     Packet answerPacket;
     answerPacket.command = ANSWER;
 
-    this->socket.sendPacketToClient(socket, &answerPacket);
+    this->serverSocket.sendPacketToClient(socket, &answerPacket);
 }
 
-vector<SocketDescriptor> ElectionHandler :: getEligible() {
-    vector<SocketDescriptor> eligible;
-    SocketDescriptor thisCandidate = this->socket.getSocketDescriptor();
+vector<Candidate> ElectionHandler :: getEligible() {
+    vector<Candidate> eligible;
+    SocketDescriptor thisCandidate = this->serverSocket.getSocketDescriptor();
 
     for (auto candidate : *(this->candidates)) {
         if (candidate > thisCandidate)
@@ -90,7 +105,7 @@ vector<SocketDescriptor> ElectionHandler :: getEligible() {
     return eligible;
 }
 
-void ElectionHandler :: handlePacket(SocketDescriptor socket, Packet *packet) {
+ElectionResult ElectionHandler :: handlePacket(SocketDescriptor socket, Packet *packet) {
     if (packet == NULL) {
 
         switch (this->waitingFor) {
@@ -100,12 +115,11 @@ void ElectionHandler :: handlePacket(SocketDescriptor socket, Packet *packet) {
                 if (this->wins == (*(this->candidates)).size()) {
                     this->communicateWin();
                     this->waitForElection();
-                    // TODO: config new coordinator
+                    identifyAsCoordinator();
                 }
 
                 break;
 
-            case ELECTION:
             case COORDINATOR:
                 this->startElection();
                 break;
@@ -124,19 +138,49 @@ void ElectionHandler :: handlePacket(SocketDescriptor socket, Packet *packet) {
                 break;
 
             case COORDINATOR:
-                // TODO: do stuff to change coordination
+                setCoordinator(socket);
                 this->waitForElection();
+                break;
+
+            case TIMEOUT_TEST:
+                this->serverSocket.sendPacketToClient(candidate, packet);
                 break;
         }
     }
 }
 
-void ElectionHandler ::setTimeout() {
-    this->timeout = MAX_TIMEOUT;
+void ElectionHandler :: setTimeout() {
+    Packet timeoutPacket;
+    timeoutPacket.command = TIMEOUT_TEST;
+
+    time_t start, stop, diff, max_diff = 0, min_diff = 0;
+
+    for(int i = 0; i < 3; i++) {
+        for (auto candidate : *(this->candidates)) {
+            start = time(0);
+            this->serverSocket.sendPacketToClient(candidate, &timeoutPacket);
+            this->serverSocket.receivePacketFromClient(candidate);
+            stop = time(0);
+
+            diff = ceil(stop - start);
+
+            if (diff > max_diff)
+                max_diff = diff;
+            else if (diff < min_diff)
+                min_diff = diff;
+        }
+    }
+
+    this->max_timeout = max_diff + 2;
+    this->min_timeout = min_diff + 1;
 }
 
-void ElectionHandler :: wait() {
-    this->wait(this->timeout);
+void ElectionHandler ::waitMaxTimeout(){
+    this->wait(this->max_timeout);
+}
+
+void ElectionHandler ::waitMinTimeout(){
+    this->wait(this->min_timeout);
 }
 
 void ElectionHandler :: wait(unsigned int timeout) {
@@ -145,7 +189,7 @@ void ElectionHandler :: wait(unsigned int timeout) {
 
 void ElectionHandler :: waitForAnswer() {
     this->waitingFor = ANSWER;
-    this->wait();
+    this->waitMaxTimeout();
 }
 
 void ElectionHandler :: waitForElection() {
@@ -154,5 +198,5 @@ void ElectionHandler :: waitForElection() {
 
 void ElectionHandler :: waitForCoordinator() {
     this->waitingFor = COORDINATOR;
-    this->wait();
+    this->waitMaxTimeout();
 }
