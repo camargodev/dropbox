@@ -2,6 +2,7 @@
 #define SERVER_SOCKET_HPP
 
 #include "SocketWrapper.hpp"
+#include "ReplicationHelper.hpp"
 
 using namespace std;
 
@@ -17,6 +18,7 @@ class ServerSocketWrapper : public SocketWrapper {
         Connection acceptClientConnection(); 
         bool sendSyncFile(SocketDescriptor clientConnectionDescriptor, WrappedFile file);
         bool sendDownloadedFile(SocketDescriptor clientConnectionDescriptor, WrappedFile file);
+        bool sendMirror(SocketDescriptor socket, Mirror mirror);
 
     private:
         sockaddr_in buildAddress(int port);

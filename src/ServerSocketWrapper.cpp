@@ -66,3 +66,10 @@ bool ServerSocketWrapper :: sendFileToClient(Command command, SocketDescriptor c
     return true;
 }
 
+bool ServerSocketWrapper :: sendMirror(SocketDescriptor socket, Mirror mirror) {
+    Packet packet(MIRROR_REPLICATION);
+    strcpy(packet.ip, mirror.ip);
+    packet.port = mirror.port;
+    return this->sendPacketToClient(socket, &packet);
+};
+

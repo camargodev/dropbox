@@ -29,14 +29,26 @@ bool handleReceivedPacket(int socket, Packet* packet) {
     bool shouldKeepExecuting = true;
 	string filenameToSave;
 
-    printf("I received a packet!!\n");
 	switch (packet->command) {
         case MIRROR: {
             printf("I will send everything to my mirror on socket %i in %s:%i\n", socket, packet->ip, packet->port);
-            replicationHelper.addMirror(Mirror(socket, packet->ip, packet->port));
-            Packet packet(SIMPLE_MESSAGE, 40, (char*) "Response from server");
-            if (serverSocket.sendPacketToClient(socket, &packet)) {
-                printf("I sent a ack to my mirror\n");
+            Mirror mirror = Mirror(socket, packet->ip, packet->port);
+            
+            // send all existing mirror to the new; send the new to all existing
+            for (auto existingMirror : replicationHelper.getMirrors()) {
+                serverSocket.sendMirror(existingMirror.socket, mirror);
+                serverSocket.sendMirror(mirror.socket, existingMirror);
+            }
+            replicationHelper.addMirror(mirror);
+            break;
+        }
+
+        case MIRROR_REPLICATION: {
+            Mirror mirror = Mirror(socket, packet->ip, packet->port);
+            replicationHelper.addMirror(mirror);
+            printf("\nMirrors I know:\n");
+            for (auto existingMirror : replicationHelper.getMirrors()) {
+                printf("  Mirror in %s:%i\n", existingMirror.ip, existingMirror.port);
             }
             break;
         }
@@ -92,7 +104,6 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             serverSocket.sendSyncFile(socket, file);
 
             break;
-
         }
 
 		case DELETE_REQUISITION: {
@@ -164,7 +175,7 @@ void *handleNewConnection(void *voidSocket) {
 void *handleMainServerAnswers(void *voidSocket) {
 	int socket = *(int*) voidSocket;
 	while(!replicationHelper.isMainServer()) {
-        printf("I'm waiting for the main server on %i\n", socket);
+        printf("\nI'm waiting for the main server\n");
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
 		handleReceivedPacket(socket, packet);
 	}

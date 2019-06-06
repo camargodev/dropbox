@@ -25,5 +25,6 @@ const Command IS_ALIVE                = 40000;
 const Command IM_ALIVE                = 50000;
 const Command TIMEOUT_TEST            = 60000;
 const Command MIRROR                  = 12345;
+const Command MIRROR_REPLICATION      = 54321;
 #endif
 
