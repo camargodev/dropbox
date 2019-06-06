@@ -7,32 +7,45 @@
 #include <string.h>
 #include <semaphore.h>
 #include "SocketWrapper.hpp"
+#include "AddressGetter.hpp"
 
-struct ConnectedClient {
+struct ClientInfo {
+    SocketDescriptor socket;
+    char ip[INET_ADDRSTRLEN];
+
+    ClientInfo() {}
+
+    ClientInfo(SocketDescriptor socket, char ip[INET_ADDRSTRLEN]) {
+        this->socket = socket;
+        strcpy(this->ip, ip);
+    }
+};
+
+struct ConnectedUser {
     string username;
-    vector<SocketDescriptor> openSockets;
+    vector<ClientInfo> openConnections;
 
-    ConnectedClient(const string& username) {
+    ConnectedUser(const string& username) {
         this->username = username;
     }
 
-    ConnectedClient() {}
+    ConnectedUser() {}
 };
 
 class ConnectionHandler {
 public:
     ConnectionHandler();
-    void addSocketToClient(const string& username, SocketDescriptor socket);
-    vector<SocketDescriptor> getSocketsByUsername(const string& username);
+    void addSocketToClient(const string& username, ClientInfo clientInfo);
+    vector<ClientInfo> getSocketsByUsername(const string& username);
     void removeSocketFromUser(const string& username, SocketDescriptor socket);
-    ConnectedClient getConnectedClientBySocket(int socket);
+    ConnectedUser getConnectedClientBySocket(int socket);
     void disconnectSocket(int socket);
 private:
     sem_t connecting;
-    vector<ConnectedClient> connectedClients;
+    vector<ConnectedUser> connectedClients;
     bool isClientAlreadyConnected(const string& username);
-    void addSocketToNewClient(const string& username, SocketDescriptor socket);
-    void addSocketToExistingClient(const string& username, SocketDescriptor socket);
+    void addSocketToNewClient(const string& username, ClientInfo clientInfo);
+    void addSocketToExistingClient(const string& username, ClientInfo clientInfo);
 
 };
 

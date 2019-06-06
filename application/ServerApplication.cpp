@@ -24,7 +24,7 @@ bool receivedFromTheCurrentOpenSocket(SocketDescriptor originSocket, SocketDescr
 }
 
 bool handleReceivedPacket(int socket, Packet* packet) {
-    ConnectedClient connectedClient = connHandler.getConnectedClientBySocket(socket);
+    ConnectedUser connectedClient = connHandler.getConnectedClientBySocket(socket);
 
     bool shouldKeepExecuting = true;
 	string filenameToSave;
@@ -64,9 +64,9 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             if (replicationHelper.isMainServer()) {
                 if (packet->currentPartIndex == packet->numberOfParts) {
                     WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
-                    for (auto openSocket : connectedClient.openSockets) {
-                        if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
-                            serverSocket.sendSyncFile(openSocket, file);
+                    for (auto openConnection : connectedClient.openConnections) {
+                        if (!receivedFromTheCurrentOpenSocket(socket, openConnection.socket))
+                            serverSocket.sendSyncFile(openConnection.socket, file);
                     }
                 }
                 for (auto mirror : replicationHelper.getMirrors())
@@ -100,9 +100,9 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
             if (replicationHelper.isMainServer()) {
                 Packet answer(DELETE_ORDER, packet->filename);
-                for (auto openSocket : connectedClient.openSockets) {
-                    if (!receivedFromTheCurrentOpenSocket(socket, openSocket))
-                        serverSocket.sendPacketToClient(openSocket, &answer);
+                for (auto openConnection : connectedClient.openConnections) {
+                    if (!receivedFromTheCurrentOpenSocket(socket, openConnection.socket))
+                        serverSocket.sendPacketToClient(openConnection.socket, &answer);
                 }
                 for (auto mirror : replicationHelper.getMirrors()) 
                     serverSocket.sendPacketToClient(mirror, packet);
@@ -114,7 +114,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             printf("\nClient %s connected on socket %i with IP %s\n", packet->payload, socket, packet->ip);
 
             fileHandler.createClientDir(packet->payload);
-            connHandler.addSocketToClient(packet->payload, socket);
+            connHandler.addSocketToClient(packet->payload, ClientInfo(socket, packet->ip));
 
             if (replicationHelper.isMainServer()) {
                 printf("I will send this identification to all my mirrors\n");
