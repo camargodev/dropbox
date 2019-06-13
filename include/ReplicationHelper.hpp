@@ -4,6 +4,9 @@
 #include "SocketWrapper.hpp"
 #include "AddressGetter.hpp"
 #include <semaphore.h>
+#include <time.h> 
+
+using Clock = clock_t;
 
 struct Mirror {
     int socket;
@@ -19,12 +22,15 @@ struct Mirror {
 
 class ReplicationHelper {
 public:
+    const static int LIVENESS_NOTIFICATION_DELAY = 3;
+    const static int TIMEOUT_TO_START_ELECTION   = 10;
     ReplicationHelper();
     bool isMainServer();
     void setAsMainServer();
     void setAsBackupServer();
     void addMirror(Mirror mirro);
     vector<Mirror> getMirrors();
+    Clock lastSignalFromServer;
 private:
     vector<Mirror> mirrors;
     bool isTheMainServer;

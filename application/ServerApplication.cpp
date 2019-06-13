@@ -162,6 +162,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
         case IM_ALIVE: {
             printf("My server is alive\n");
+            replicationHelper.lastSignalFromServer = clock();
+            break;
         }
     }
 
@@ -186,14 +188,22 @@ void *handleMainServerAnswers(void *voidSocket) {
 	}
 }
 
-void *tellMyMirrosImAlive(void *dummy) {
-    while(replicationHelper.isMainServer()) {
-        for (auto mirror : replicationHelper.getMirrors()) {
-            printf("Notifying mirror %s:%i I'm alive\n", mirror.ip, mirror.port);
-            Packet packet(IM_ALIVE);
-            serverSocket.sendPacketToClient(mirror.socket, &packet);
+void *processLiveness(void *dummy) {
+    while(true) {
+        if (replicationHelper.isMainServer()){
+            for (auto mirror : replicationHelper.getMirrors()) {
+                printf("Notifying mirror %s:%i I'm alive\n", mirror.ip, mirror.port);
+                Packet packet(IM_ALIVE);
+                serverSocket.sendPacketToClient(mirror.socket, &packet);
+            }
+        } else {
+            Clock clocksWithoutSignal = clock() - replicationHelper.lastSignalFromServer;
+            double timeWithoutSignal = ((double) clocksWithoutSignal)/CLOCKS_PER_SEC;
+            printf("%f seconds since last ack\n", timeWithoutSignal);
+            if (timeWithoutSignal >= ReplicationHelper::TIMEOUT_TO_START_ELECTION)
+                printf("I SHOULD START AND ELECTION\n");
         }
-        sleep(3);
+        sleep(ReplicationHelper::LIVENESS_NOTIFICATION_DELAY);
 	}
 }
 
@@ -217,7 +227,7 @@ void processMainServerAnswers() {
 
 void processLiveness() {
     pthread_t connectionThread;
-    pthread_create(&connectionThread, NULL, tellMyMirrosImAlive, NULL);
+    pthread_create(&connectionThread, NULL, processLiveness, NULL);
 }
 
 void connectAsMirror(char *argv[]) {
