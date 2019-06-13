@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <pthread.h>
+#include <unistd.h>
 #include "../include/ServerSocketWrapper.hpp"
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/ConnectionHandler.hpp"
@@ -158,6 +159,10 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
             break;
         }
+
+        case IM_ALIVE: {
+            printf("My server is alive\n");
+        }
     }
 
 	return shouldKeepExecuting;
@@ -181,6 +186,17 @@ void *handleMainServerAnswers(void *voidSocket) {
 	}
 }
 
+void *tellMyMirrosImAlive(void *dummy) {
+    while(replicationHelper.isMainServer()) {
+        for (auto mirror : replicationHelper.getMirrors()) {
+            printf("Notifying mirror %s:%i I'm alive\n", mirror.ip, mirror.port);
+            Packet packet(IM_ALIVE);
+            serverSocket.sendPacketToClient(mirror.socket, &packet);
+        }
+        sleep(3);
+	}
+}
+
 bool isMirror(int argc) {
     return argc > 3;
 }
@@ -197,6 +213,11 @@ void processMainServerAnswers() {
     int descriptor = clientSocket.getSocketDescriptor();
     pthread_create(&connectionThread, NULL, handleMainServerAnswers, &descriptor);
     pthread_join(connectionThread, NULL);
+}
+
+void processLiveness() {
+    pthread_t connectionThread;
+    pthread_create(&connectionThread, NULL, tellMyMirrosImAlive, NULL);
 }
 
 void connectAsMirror(char *argv[]) {
@@ -232,8 +253,9 @@ int main(int argc, char *argv[]) {
 
 	serverSocket.setNumberOfClients(5);
 	fileHandler.createDir();
-
-
+    
+    processLiveness();
+    
     while (true) 
         if (replicationHelper.isMainServer()) 
             processNewClientConnected();    
