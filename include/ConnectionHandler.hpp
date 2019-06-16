@@ -40,6 +40,7 @@ public:
     void removeSocketFromUser(const string& username, SocketDescriptor socket);
     ConnectedUser getConnectedClientBySocket(int socket);
     void disconnectSocket(int socket);
+    vector<ConnectedUser> getAllConnectedUsers();
 private:
     sem_t connecting;
     vector<ConnectedUser> connectedClients;

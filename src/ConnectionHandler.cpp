@@ -53,3 +53,7 @@ ConnectedUser ConnectionHandler :: getConnectedClientBySocket(int socket) {
             if (openConnection.socket == socket)
                 return connectedClient;
 }
+
+vector<ConnectedUser> ConnectionHandler :: getAllConnectedUsers() {
+    return connectedClients;
+}

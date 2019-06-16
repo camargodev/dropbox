@@ -14,7 +14,8 @@ bool ClientSocketWrapper :: setServer(string hostname, int port) {
 }
 
 bool ClientSocketWrapper :: connectToServer() {
-    return connect(this->socketDescriptor,(struct sockaddr *) &this->serverAddress, sizeof(this->serverAddress)) >= 0;
+    int result = connect(this->socketDescriptor,(struct sockaddr *) &this->serverAddress, sizeof(this->serverAddress));
+    return result >= 0;
 }
 
 sockaddr_in ClientSocketWrapper :: buildAddress(in_addr hostname, int port) {
@@ -70,6 +71,13 @@ bool ClientSocketWrapper :: askToDownloadFile(char* filename) {
 
 bool ClientSocketWrapper :: identifyAsMirror(int port) {
     Packet packet(MIRROR);
+    strcpy(packet.ip, this->addressGetter.getIP());
+    packet.port = port;
+    return sendPacketToServer(&packet);
+}
+
+bool ClientSocketWrapper :: identifyAsNewServer(int port) {
+    Packet packet;
     strcpy(packet.ip, this->addressGetter.getIP());
     packet.port = port;
     return sendPacketToServer(&packet);

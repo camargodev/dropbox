@@ -73,3 +73,7 @@ bool ServerSocketWrapper :: sendMirror(SocketDescriptor socket, Mirror mirror) {
     return this->sendPacketToClient(socket, &packet);
 };
 
+int ServerSocketWrapper :: getPort() {
+    return this->port;
+}
+

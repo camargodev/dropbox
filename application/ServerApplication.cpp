@@ -188,11 +188,29 @@ void *handleMainServerAnswers(void *voidSocket) {
 	}
 }
 
+void identifyAsCoordinator() {
+    printf("I am the new coordinator and I will warn all users\n");
+    ClientSocketWrapper miniClientSocket;
+    for (auto user : connHandler.getAllConnectedUsers()) {
+        printf("Warning user %s\n", user.username.c_str());
+        for (auto connection : user.openConnections) {
+            printf("Warning client on %s:%i\n", connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER);
+            if (!miniClientSocket.setServer(connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER))
+                printf("Error setting server\n");
+            if (!miniClientSocket.connectToServer())
+                printf("Error connecting\n");
+            if (!miniClientSocket.identifyAsNewServer(serverSocket.getPort()));
+                printf("Error identifiying\n");
+        }
+    }
+    replicationHelper.setAsMainServer();
+}
+
 void *processLiveness(void *dummy) {
     while(true) {
         if (replicationHelper.isMainServer()){
             for (auto mirror : replicationHelper.getMirrors()) {
-                printf("Notifying mirror %s:%i I'm alive\n", mirror.ip, mirror.port);
+                // printf("Notifying mirror %s:%i I'm alive\n", mirror.ip, mirror.port);
                 Packet packet(IM_ALIVE);
                 serverSocket.sendPacketToClient(mirror.socket, &packet);
             }
@@ -201,7 +219,7 @@ void *processLiveness(void *dummy) {
             double timeWithoutSignal = ((double) clocksWithoutSignal)/CLOCKS_PER_SEC;
             printf("%f seconds since last ack\n", timeWithoutSignal);
             if (timeWithoutSignal >= ReplicationHelper::TIMEOUT_TO_START_ELECTION)
-                printf("I SHOULD START AND ELECTION\n");
+                identifyAsCoordinator();
         }
         sleep(ReplicationHelper::LIVENESS_NOTIFICATION_DELAY);
 	}

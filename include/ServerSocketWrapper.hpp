@@ -19,7 +19,7 @@ class ServerSocketWrapper : public SocketWrapper {
         bool sendSyncFile(SocketDescriptor clientConnectionDescriptor, WrappedFile file);
         bool sendDownloadedFile(SocketDescriptor clientConnectionDescriptor, WrappedFile file);
         bool sendMirror(SocketDescriptor socket, Mirror mirror);
-
+        int getPort();
     private:
         sockaddr_in buildAddress(int port);
         bool sendFileToClient(Command command, SocketDescriptor clientConnectionDescriptor, WrappedFile file);

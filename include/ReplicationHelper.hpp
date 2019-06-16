@@ -22,8 +22,9 @@ struct Mirror {
 
 class ReplicationHelper {
 public:
-    const static int LIVENESS_NOTIFICATION_DELAY = 3;
-    const static int TIMEOUT_TO_START_ELECTION   = 10;
+    const static int LIVENESS_NOTIFICATION_DELAY = 1;
+    const static int TIMEOUT_TO_START_ELECTION   = 5;
+    const static int PORT_TO_NEW_SERVER          = 4020;
     ReplicationHelper();
     bool isMainServer();
     void setAsMainServer();

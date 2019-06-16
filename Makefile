@@ -26,6 +26,7 @@ client:
 	${compile} ${file} ${src}/ClientFileHandler.cpp
 	${compile} ${file} ${src}/AddressGetter.cpp 
 	${compile} ${file} ${src}/SocketWrapper.cpp
+	${compile} ${file} ${src}/ServerSocketWrapper.cpp 
 	${compile} ${file} ${src}/ClientSocketWrapper.cpp 
 	${move-all-to} ${client-dependencies}
 

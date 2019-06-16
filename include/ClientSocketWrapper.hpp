@@ -21,6 +21,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool askForFileList();
         void getSyncDir();
         bool identifyAsMirror(int port);
+        bool identifyAsNewServer(int port);
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);
