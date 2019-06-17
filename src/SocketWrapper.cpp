@@ -25,8 +25,6 @@ Packet* SocketWrapper :: receivePacket(int connectionDescriptor, int timeout) {
 
     while ((bytesToRead = packetSize - totalReadBytes) != 0) {
         alreadyReadBytes = read(connectionDescriptor, (packet + totalReadBytes), bytesToRead);
-        if (alreadyReadBytes <= 0)
-            return NULL;
         totalReadBytes += alreadyReadBytes;
 
         if(timeout > 0 && totalReadBytes == 0 && time(0) - start >= timeout) return NULL;
@@ -113,8 +111,8 @@ void SocketWrapper :: closeSocket() {
 }
 
 void SocketWrapper :: setTimeoutForBlockingCalls(int timeoutInSeconds) {
-    struct timeval tv;
-    tv.tv_sec = timeoutInSeconds;
-    tv.tv_usec = 0;
-    setsockopt(this->socketDescriptor, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+    // struct timeval tv;
+    // tv.tv_sec = timeoutInSeconds;
+    // tv.tv_usec = 0;
+    // setsockopt(this->socketDescriptor, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 }

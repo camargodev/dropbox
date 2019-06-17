@@ -9,6 +9,7 @@ class ClientSocketWrapper : public SocketWrapper {
 
     public: 
         Packet* receivePacketFromServer();
+        Packet* receivePacketFromServer(int timeout);
         bool sendPacketToServer(Packet* packet);
         bool setServer(string serverHostname, int serverPort);
         bool connectToServer();

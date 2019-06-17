@@ -182,7 +182,7 @@ void *handleNewConnection(void *voidSocket) {
 int x = 0;
 void *handleMainServerAnswers(void *voidSocket) {
 	int socket = *(int*) voidSocket;
-    serverSocket.setTimeoutForBlockingCalls(ReplicationHelper::TIMEOUT_TO_START_ELECTION);
+    // serverSocket.setTimeoutForBlockingCalls(ReplicationHelper::TIMEOUT_TO_START_ELECTION);
 	while(!replicationHelper.isMainServer()) {
         Packet* packet = serverSocket.receivePacketFromClient(socket);
         if (packet != NULL)

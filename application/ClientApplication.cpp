@@ -97,7 +97,7 @@ void handleReceivedPacket(Packet* packet) {
 
 void *handleServerAnswers(void* dummy) {
     while (true) {
-        Packet* packet = clientSocket.receivePacketFromServer();
+        Packet* packet = clientSocket.receivePacketFromServer(3);
         if (packet != NULL)
             handleReceivedPacket(packet);
     }
@@ -154,7 +154,7 @@ void *handleNewServer(void* dummy) {
         printf("Error openning socket\n");
     miniServerSocket.setNumberOfClients(1);
     while(true) {
-        // printf("I will wait for new servers on port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
+        printf("I will wait for new servers on port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
         Connection clientConnection = miniServerSocket.acceptClientConnection();
         if (clientConnection.descriptor < 0)
             continue;

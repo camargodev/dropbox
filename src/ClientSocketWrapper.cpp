@@ -29,6 +29,11 @@ Packet* ClientSocketWrapper :: receivePacketFromServer() {
     return receivePacket(this->socketDescriptor);
 }
 
+Packet* ClientSocketWrapper :: receivePacketFromServer(int timeout) {
+    return receivePacket(this->socketDescriptor, timeout);
+}
+
+
 bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
     return sendPacket(this->socketDescriptor, packet);
 }
