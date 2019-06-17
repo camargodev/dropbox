@@ -69,6 +69,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case UPLOAD_FILE: {
+            printf("I received file %s (%i/%i)\n", packet->filename, packet->currentPartIndex, packet->numberOfParts);
             if(packet->currentPartIndex == 1)
                 fileHandler.createFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
             else
@@ -161,7 +162,6 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case IM_ALIVE: {
-            printf("My server is alive\n");
             replicationHelper.lastSignalFromServer = clock();
             break;
         }
@@ -175,21 +175,24 @@ void *handleNewConnection(void *voidSocket) {
 	bool shouldKeepExecuting = true;
     while(shouldKeepExecuting) {
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
-		shouldKeepExecuting = handleReceivedPacket(socket, packet);
+        if (packet != NULL)
+		    shouldKeepExecuting = handleReceivedPacket(socket, packet);
 	}
 }
-
+int x = 0;
 void *handleMainServerAnswers(void *voidSocket) {
 	int socket = *(int*) voidSocket;
+    serverSocket.setTimeoutForBlockingCalls(ReplicationHelper::TIMEOUT_TO_START_ELECTION);
 	while(!replicationHelper.isMainServer()) {
-        printf("\nI'm waiting for the main server\n");
-		Packet* packet = serverSocket.receivePacketFromClient(socket);
-		handleReceivedPacket(socket, packet);
+        Packet* packet = serverSocket.receivePacketFromClient(socket);
+        if (packet != NULL)
+            handleReceivedPacket(socket, packet);
 	}
+    printf("I'm no longer a copy\n");
 }
 
 void identifyAsCoordinator() {
-    printf("I am the new coordinator and I will warn all users\n");
+    printf("I'm the NEW COORD: I will warn all users\n");
     ClientSocketWrapper miniClientSocket;
     for (auto user : connHandler.getAllConnectedUsers()) {
         printf("Warning user %s\n", user.username.c_str());
@@ -203,21 +206,20 @@ void identifyAsCoordinator() {
                 printf("Error identifiying\n");
         }
     }
+    printf("NOW I'M THE BOSS\n");
     replicationHelper.setAsMainServer();
 }
 
-void *processLiveness(void *dummy) {
+void *processLivenessOnNewThread(void *dummy) {
     while(true) {
         if (replicationHelper.isMainServer()){
             for (auto mirror : replicationHelper.getMirrors()) {
-                // printf("Notifying mirror %s:%i I'm alive\n", mirror.ip, mirror.port);
                 Packet packet(IM_ALIVE);
                 serverSocket.sendPacketToClient(mirror.socket, &packet);
             }
         } else {
             Clock clocksWithoutSignal = clock() - replicationHelper.lastSignalFromServer;
             double timeWithoutSignal = ((double) clocksWithoutSignal)/CLOCKS_PER_SEC;
-            printf("%f seconds since last ack\n", timeWithoutSignal);
             if (timeWithoutSignal >= ReplicationHelper::TIMEOUT_TO_START_ELECTION)
                 identifyAsCoordinator();
         }
@@ -231,8 +233,13 @@ bool isMirror(int argc) {
 
 void processNewClientConnected() {
     pthread_t connectionThread;
+    printf("Waiting for a new client to connect\n");
     Connection clientConnection = serverSocket.acceptClientConnection();
     int descriptor = clientConnection.descriptor;
+    if (descriptor < 0) {
+        printf("Timeout!\n");
+        return;
+    }
     pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
 }
 
@@ -245,12 +252,12 @@ void processMainServerAnswers() {
 
 void processLiveness() {
     pthread_t connectionThread;
-    pthread_create(&connectionThread, NULL, processLiveness, NULL);
+    pthread_create(&connectionThread, NULL, processLivenessOnNewThread, NULL);
 }
 
 void connectAsMirror(char *argv[]) {
     if (!clientSocket.setServer(string(argv[2]), stoi(string(argv[3])))) {
-        printf("Error seeting server\n");
+        printf("Error setting server\n");
         return;
     }
     if (!clientSocket.connectToServer()) {
@@ -284,12 +291,14 @@ int main(int argc, char *argv[]) {
     
     processLiveness();
     
-    while (true) 
-        if (replicationHelper.isMainServer()) 
+    while (true) {
+        if (replicationHelper.isMainServer()) { 
             processNewClientConnected();    
-        else 
+        } else { 
             processMainServerAnswers();
-    
+        }
+    }
+
 	serverSocket.closeSocket();
 	return 0;
 }

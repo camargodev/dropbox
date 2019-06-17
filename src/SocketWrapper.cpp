@@ -14,7 +14,7 @@ sockaddr_in SocketWrapper :: buildDefaultAddress(int port) {
 	bzero(&(address.sin_zero), 8); 
     return address;
 }
-
+int y = 0;
 Packet* SocketWrapper :: receivePacket(int connectionDescriptor, int timeout) {
 	int packetSize = sizeof(Packet);
     void *packet = (void*) malloc(packetSize);
@@ -25,6 +25,8 @@ Packet* SocketWrapper :: receivePacket(int connectionDescriptor, int timeout) {
 
     while ((bytesToRead = packetSize - totalReadBytes) != 0) {
         alreadyReadBytes = read(connectionDescriptor, (packet + totalReadBytes), bytesToRead);
+        if (alreadyReadBytes <= 0)
+            return NULL;
         totalReadBytes += alreadyReadBytes;
 
         if(timeout > 0 && totalReadBytes == 0 && time(0) - start >= timeout) return NULL;
@@ -108,4 +110,11 @@ void SocketWrapper :: closeConnection(Connection connection) {
 
 void SocketWrapper :: closeSocket() {
     close(this->socketDescriptor);
+}
+
+void SocketWrapper :: setTimeoutForBlockingCalls(int timeoutInSeconds) {
+    struct timeval tv;
+    tv.tv_sec = timeoutInSeconds;
+    tv.tv_usec = 0;
+    setsockopt(this->socketDescriptor, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 }

@@ -32,6 +32,7 @@ class SocketWrapper {
         void closeSocket();
         bool sendFileList(SocketDescriptor connectionDescriptor, vector<FileForListing> files);
         bool sendFileListForSyncDir(SocketDescriptor connectionDescriptor, vector<FileForListing> files);
+        void setTimeoutForBlockingCalls(int timeoutInSeconds);
 
     protected:
         SocketDescriptor socketDescriptor;

@@ -6,6 +6,7 @@ int calculateNumberOfPayloads(const char* filename);
 bool ClientSocketWrapper :: setServer(string hostname, int port) {
     this->socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
     hostent* host = gethostbyname(hostname.c_str());
+    setTimeoutForBlockingCalls(5);
     if (host != NULL) {
         this->serverAddress = this->buildAddress(*((struct in_addr *)host->h_addr), port);
         return true;
