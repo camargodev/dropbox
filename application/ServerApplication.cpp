@@ -11,6 +11,8 @@
 #include "../include/ElectionHelper.hpp"
 #include "../include/AddressGetter.hpp"
 
+void startElection();
+
 ConnectionHandler connHandler;
 ServerSocketWrapper serverSocket;
 ClientSocketWrapper clientSocket;
@@ -33,7 +35,8 @@ bool receivedFromTheCurrentOpenSocket(SocketDescriptor originSocket, SocketDescr
 bool messageRequiresUserAlreadyConnected(Command command) {
     return !(command == IM_ALIVE || command == MIRROR 
         || command == MIRROR_REPLICATION || command == SIMPLE_MESSAGE
-        || command == IDENTIFICATION || command == ELECTION);
+        || command == IDENTIFICATION || command == ELECTION
+        || command == ANSWER || command == COORDINATOR);
 }
 
 bool handleReceivedPacket(int socket, Packet* packet) {
@@ -186,8 +189,21 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case ELECTION: {
+            ClientSocketWrapper miniClientSocket;
             printf("Mirror %s:%i sent a ELECTION\n", packet->ip, packet->port);
+            startElection();
+            if (!miniClientSocket.setServer(packet->ip, packet->port))
+                printf("Error setting server\n");
+            if (!miniClientSocket.connectToServer())
+                printf("Error connecting\n");
+            miniClientSocket.sendElectionAnswer();
             break;
+        }
+
+        case ANSWER: {
+            if (!electionHelper.hasReceivedAnswer())
+                printf("I received an answer and will wait for coord\n");
+            electionHelper.confirmAnswerReceived();
         }
     }
 	return shouldKeepExecuting;
@@ -195,14 +211,14 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 void *handleNewConnection(void *voidSocket) {
 	int socket = *(int*) voidSocket;
-    printf("Handling connection on socket %i\n", socket);
+    // printf("Handling connection on socket %i\n", socket);
 	bool shouldKeepExecuting = true;
     while(shouldKeepExecuting) {
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
         if (packet != NULL)
 		    shouldKeepExecuting = handleReceivedPacket(socket, packet);
 	}
-    return (char*) "end"; // to avoid checks;
+    return nullptr;
 }
 
 void *handleMainServerAnswers(void *voidSocket) {
@@ -212,7 +228,7 @@ void *handleMainServerAnswers(void *voidSocket) {
         if (packet != NULL)
             handleReceivedPacket(socket, packet);
 	}
-    return (char*) "end"; // to avoid checks;
+    return nullptr;
 }
 
 void identifyAsCoordinator() {
@@ -235,6 +251,9 @@ void identifyAsCoordinator() {
 
 void startElection() {
     AddressGetter addressGetter;
+    if (electionHelper.hasAlreadyStartedElection())
+        return;
+    // printf("Starting election\n");
     Mirror me = Mirror(addressGetter.getIP(), myPort);
     auto mirrorsWithHigherPrio = electionHelper.getMirrorsWithHighestPrio(me, replicationHelper.getMirrors());
     for (auto mirror : mirrorsWithHigherPrio) {
@@ -243,10 +262,10 @@ void startElection() {
             printf("Error setting server for miniClient\n");
         if (!miniClientSocket.connectToServer())
             printf("Error connecting\n");
-        printf("I should send ELECTION to %s:%i\n", mirror.ip, mirror.port);
         if (!miniClientSocket.sendElectionMessage(me))
             printf("Error sending election\n");
     }
+    electionHelper.setElectionAsStarted();
 }
 
 void *processLivenessOnNewThread(void *dummy) {
@@ -267,7 +286,7 @@ void *processLivenessOnNewThread(void *dummy) {
         }
         sleep(ReplicationHelper::LIVENESS_NOTIFICATION_DELAY);
 	}
-    return (char*) "end"; // to avoid checks;
+    return nullptr;
 }
 
 bool isMirror(int argc) {
@@ -276,7 +295,7 @@ bool isMirror(int argc) {
 
 void processNewClientConnected() {
     pthread_t connectionThread;
-    printf("Waiting for a new client to connect\n");
+    // printf("Waiting for a new client to connect\n");
     Connection clientConnection = serverSocket.acceptClientConnection();
     int descriptor = clientConnection.descriptor;
     if (descriptor < 0) 

@@ -115,3 +115,9 @@ bool ClientSocketWrapper :: sendElectionMessage(Mirror mirror) {
     packet.port = mirror.port;
     return sendPacketToServer(&packet);
 }
+
+bool ClientSocketWrapper :: sendElectionAnswer() {
+    Packet packet(ANSWER);
+    return sendPacketToServer(&packet);
+}
+

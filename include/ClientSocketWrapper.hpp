@@ -25,6 +25,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool identifyAsMirror(int port);
         bool identifyAsNewServer(int port);
         bool sendElectionMessage(Mirror mirror);
+        bool sendElectionAnswer();
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);
