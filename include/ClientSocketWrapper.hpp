@@ -2,6 +2,7 @@
 #define CLIENT_SOCKET_HPP
 
 #include "SocketWrapper.hpp"
+#include "ReplicationHelper.hpp"
 
 using namespace std;
 
@@ -23,6 +24,7 @@ class ClientSocketWrapper : public SocketWrapper {
         void getSyncDir();
         bool identifyAsMirror(int port);
         bool identifyAsNewServer(int port);
+        bool sendElectionMessage(Mirror mirror);
 
     private:
         sockaddr_in buildAddress(in_addr hostname, int port);

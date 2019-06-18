@@ -18,6 +18,12 @@ struct Mirror {
         strcpy(this->ip, ip);
         this->port = port;
     }
+
+    Mirror(char ip[INET6_ADDRSTRLEN], int port) {
+        this->socket = -1;
+        strcpy(this->ip, ip);
+        this->port = port;
+    }
 };
 
 class ReplicationHelper {

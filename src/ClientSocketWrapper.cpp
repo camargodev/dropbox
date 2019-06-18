@@ -108,3 +108,10 @@ void ClientSocketWrapper :: getSyncDir() {
     Packet packet(GET_SYNC_DIR);
     sendPacketToServer(&packet);
 }
+
+bool ClientSocketWrapper :: sendElectionMessage(Mirror mirror) {
+    Packet packet(ELECTION);
+    strcpy(packet.ip, mirror.ip);
+    packet.port = mirror.port;
+    return sendPacketToServer(&packet);
+}

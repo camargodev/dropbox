@@ -1,4 +1,4 @@
-compile = g++ -std=c++11 -g -Wno-pointer-arith
+compile = g++ -std=c++11 -g -Wno-pointer-arith -Wall -Werror
 
 o = objects
 src = src
@@ -16,6 +16,8 @@ move-all-to = mv *.o
 as = -o
 file = -c
 
+
+
 all: clean dir-gen client server
 	${compile} ${as} server ${app}/ServerApplication.cpp ${with-server-dependencies} ${multi-thread}
 	${compile} ${as} client ${app}/ClientApplication.cpp ${with-client-dependencies} ${multi-thread}
@@ -31,7 +33,6 @@ client:
 	${move-all-to} ${client-dependencies}
 
 server:
-	${compile} ${file} ${src}/PacketHandler.cpp
 	${compile} ${file} ${src}/AddressGetter.cpp 
 	${compile} ${file} ${src}/SocketWrapper.cpp
 	${compile} ${file} ${src}/ServerSocketWrapper.cpp 
@@ -39,7 +40,7 @@ server:
 	${compile} ${file} ${src}/ConnectionHandler.cpp
 	${compile} ${file} ${src}/ClientFileHandler.cpp
 	${compile} ${file} ${src}/ServerFileHandler.cpp
-	# ${compile} ${file} ${src}/ElectionHandler.cpp
+	${compile} ${file} ${src}/ElectionHelper.cpp
 	${compile} ${file} ${src}/ReplicationHelper.cpp
 	${move-all-to} ${server-dependencies}
 
