@@ -204,6 +204,12 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             if (!electionHelper.hasReceivedAnswer())
                 printf("I received an answer and will wait for coord\n");
             electionHelper.confirmAnswerReceived();
+            break;
+        }
+
+        case COORDINATOR: {
+            printf("My new coord is %s:%i\n", packet->ip, packet->port);
+            break;
         }
     }
 	return shouldKeepExecuting;
@@ -232,7 +238,7 @@ void *handleMainServerAnswers(void *voidSocket) {
 }
 
 void identifyAsCoordinator() {
-    printf("I'm the NEW SERVER\n");
+    printf("I'm the NEW COORDINATOR\n");
     ClientSocketWrapper miniClientSocket;
     for (auto user : connHandler.getAllConnectedUsers()) {
         for (auto connection : user.openConnections) {
@@ -244,6 +250,13 @@ void identifyAsCoordinator() {
             miniClientSocket.identifyAsNewServer(serverSocket.getPort());
             // miniClientSocket.closeSocket();
         }
+    }
+    for (auto mirror : replicationHelper.getMirrors()) {
+        if (!miniClientSocket.setServer(mirror.ip, mirror.port))
+            printf("Error setting server\n");
+        if (!miniClientSocket.connectToServer())
+            printf("Error connecting\n");
+        miniClientSocket.identifyAsNewCoordinator(serverSocket.getPort());
     }
     printf("Now everybody knows I'm the main server\n");
     replicationHelper.setAsMainServer();
@@ -257,7 +270,7 @@ void *checkForElectionAnswersOnNewThread(void *dummy) {
         isTheNewCoordinator = secondsWithoutAnswer >= ElectionHelper::TIMEOUT_FOR_COORDINATOR;
     }
     if (isTheNewCoordinator)
-        printf("I AM THE NEW COORDINATOR\n");
+        identifyAsCoordinator();
     return nullptr;
 }
 

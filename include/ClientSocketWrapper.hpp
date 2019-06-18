@@ -24,6 +24,7 @@ class ClientSocketWrapper : public SocketWrapper {
         void getSyncDir();
         bool identifyAsMirror(int port);
         bool identifyAsNewServer(int port);
+        bool identifyAsNewCoordinator(int port);
         bool sendElectionMessage(Mirror mirror);
         bool sendElectionAnswer();
 

@@ -89,6 +89,13 @@ bool ClientSocketWrapper :: identifyAsNewServer(int port) {
     return sendPacketToServer(&packet);
 }
 
+bool ClientSocketWrapper :: identifyAsNewCoordinator(int port) {
+    Packet packet(COORDINATOR);
+    strcpy(packet.ip, this->addressGetter.getIP());
+    packet.port = port;
+    return sendPacketToServer(&packet);
+}
+
 bool ClientSocketWrapper :: getFileFromSyncDir(char* filename) {
     Packet packet(ASK_FOR_SYNC_FILE, sizeof(filename), filename);
     return sendPacketToServer(&packet);
