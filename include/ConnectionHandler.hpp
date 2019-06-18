@@ -23,10 +23,15 @@ struct ClientInfo {
 
 struct ConnectedUser {
     string username;
+    bool valid = true;
     vector<ClientInfo> openConnections;
 
     ConnectedUser(const string& username) {
         this->username = username;
+    }
+
+    ConnectedUser(bool valid) {
+        this->valid = valid;
     }
 
     ConnectedUser() {}

@@ -1,5 +1,5 @@
 #include "../include/AddressGetter.hpp"
-
+#include "string"
 
 Address AddressGetter :: getFirstAddress() {
     Address address = NULL;
@@ -46,4 +46,5 @@ char* AddressGetter :: getIP() {
     for (auto address : getMachineAddresses()) 
         if (isIPV4(address) && isNotLocalhost(address))
             return extractIP(address);
+    return (char*) "localhost";
 }

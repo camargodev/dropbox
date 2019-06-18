@@ -2,6 +2,7 @@
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
+#include <semaphore.h>
 #include "../include/ServerSocketWrapper.hpp"
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/ConnectionHandler.hpp"
@@ -13,6 +14,7 @@ ServerSocketWrapper serverSocket;
 ClientSocketWrapper clientSocket;
 ServerFileHandler fileHandler;
 ReplicationHelper replicationHelper;
+sem_t handling;
 
 int getServerPort(int argc, char *argv[]) {
 	int port = stoi(string(argv[1]));
@@ -24,13 +26,23 @@ bool receivedFromTheCurrentOpenSocket(SocketDescriptor originSocket, SocketDescr
 	return originSocket == openSocket;
 }
 
-bool handleReceivedPacket(int socket, Packet* packet) {
-    ConnectedUser connectedClient = connHandler.getConnectedClientBySocket(socket);
+bool messageRequiresUserAlreadyConnected(Command command) {
+    return !(command == IM_ALIVE || command == MIRROR 
+        || command == MIRROR_REPLICATION || command == SIMPLE_MESSAGE
+        || command == IDENTIFICATION);
+}
 
+bool handleReceivedPacket(int socket, Packet* packet) {
     bool shouldKeepExecuting = true;
 	string filenameToSave;
-
-	switch (packet->command) {
+    ConnectedUser connectedClient = connHandler.getConnectedClientBySocket(socket);
+    
+    if (!connectedClient.valid && messageRequiresUserAlreadyConnected(packet->command)) {
+        printf("I need a user and could not find a valid one\n");
+        return shouldKeepExecuting;
+    }
+	
+    switch (packet->command) {
         case MIRROR: {
             printf("I will send everything to my mirror on socket %i in %s:%i\n", socket, packet->ip, packet->port);
             Mirror mirror = Mirror(socket, packet->ip, packet->port);
@@ -169,7 +181,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             break;
         }
     }
-    printf("Quiting handle received packet\n");
+    // printf("Quiting handle received packet\n");
 	return shouldKeepExecuting;
 }
 
@@ -178,12 +190,12 @@ void *handleNewConnection(void *voidSocket) {
     printf("Handling connection on socket %i\n", socket);
 	bool shouldKeepExecuting = true;
     while(shouldKeepExecuting) {
-        printf("Waiting for packet\n");
+        // printf("Waiting for packet\n");
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
-        printf("Packet received\n");
+        // printf("Packet received\n");
         if (packet != NULL)
 		    shouldKeepExecuting = handleReceivedPacket(socket, packet);
-        printf("Im back\n");
+        // printf("Im back\n");
 	}
 }
 
@@ -203,7 +215,7 @@ void identifyAsCoordinator() {
     ClientSocketWrapper miniClientSocket;
     for (auto user : connHandler.getAllConnectedUsers()) {
         for (auto connection : user.openConnections) {
-            printf("Warning user %s:client %s:%i\n", user.username.c_str(), connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER);
+            printf("Warning user %s: client %s:%i\n", user.username.c_str(), connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER);
             if (!miniClientSocket.setServer(connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER))
                 printf("Error setting server\n");
             if (!miniClientSocket.connectToServer())
@@ -280,6 +292,7 @@ void connectAsMirror(char *argv[]) {
 int main(int argc, char *argv[]) {
 
 	serverSocket.listenOnPort(getServerPort(argc, argv));
+    sem_init(&handling, 0, 1);
     
     if (isMirror(argc)) {
         connectAsMirror(argv);

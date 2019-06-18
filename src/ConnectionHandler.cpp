@@ -6,10 +6,13 @@ ConnectionHandler :: ConnectionHandler() {
 }
 
 bool ConnectionHandler :: isClientAlreadyConnected(const string& username) {
+    sem_wait(&connecting);
+    bool alreadyConnected = false;
     for (auto connectedClient : connectedClients)
         if (username.compare(connectedClient.username) == 0)
-            return true;
-    return false;
+            alreadyConnected = true;
+    sem_post(&connecting);
+    return alreadyConnected;
 }
 
 void ConnectionHandler :: addSocketToNewClient(const string& username, ClientInfo clientInfo) {
@@ -21,6 +24,7 @@ void ConnectionHandler :: addSocketToNewClient(const string& username, ClientInf
 }
 
 void ConnectionHandler :: addSocketToExistingClient(const string& username, ClientInfo clientInfo) {
+    sem_wait(&connecting);
     bool ipConnected = false;
     for (auto&& connectedClient : connectedClients) {
         if (username.compare(connectedClient.username) == 0) {
@@ -37,6 +41,7 @@ void ConnectionHandler :: addSocketToExistingClient(const string& username, Clie
             }
         }
     }
+    sem_post(&connecting);
 }
 
 void ConnectionHandler :: addSocketToClient(const string& username, ClientInfo clientInfo) {
@@ -47,10 +52,13 @@ void ConnectionHandler :: addSocketToClient(const string& username, ClientInfo c
 }
 
 vector<ClientInfo> ConnectionHandler :: getSocketsByUsername(const string& username) {
+    sem_wait(&connecting);
+    vector<ClientInfo> connections = {};
     for (auto connectedClient : connectedClients)
         if (username.compare(connectedClient.username) == 0)
-            return connectedClient.openConnections;
-    return {};
+            connections = connectedClient.openConnections;
+    sem_post(&connecting);
+    return connections;
 }
 
 void ConnectionHandler :: removeSocketFromUser(const string& username, int socket) {
@@ -61,10 +69,20 @@ void ConnectionHandler :: removeSocketFromUser(const string& username, int socke
 }
 
 ConnectedUser ConnectionHandler :: getConnectedClientBySocket(int socket) {
-    for (auto connectedClient : connectedClients)
-        for (auto openConnection : connectedClient.openConnections)
-            if (openConnection.socket == socket)
+    sem_wait(&connecting);
+    for (auto connectedClient : connectedClients) {
+        for (auto openConnection : connectedClient.openConnections) {
+            if (openConnection.socket == socket) {
+                // printf("Found client %s with socket %i\n", connectedClient.username.c_str(), socket);
+                connectedClient.valid = true;
+                sem_post(&connecting);
                 return connectedClient;
+            }
+        }
+    }
+    // printf("Could not find user for socket %i\n", socket);
+    sem_post(&connecting);
+    return ConnectedUser(false);
 }
 
 vector<ConnectedUser> ConnectionHandler :: getAllConnectedUsers() {
