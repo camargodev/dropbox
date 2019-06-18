@@ -21,9 +21,22 @@ void ConnectionHandler :: addSocketToNewClient(const string& username, ClientInf
 }
 
 void ConnectionHandler :: addSocketToExistingClient(const string& username, ClientInfo clientInfo) {
-    for (auto&& connectedClient : connectedClients)
-        if (username.compare(connectedClient.username) == 0)
-            connectedClient.openConnections.push_back(clientInfo);
+    bool ipConnected = false;
+    for (auto&& connectedClient : connectedClients) {
+        if (username.compare(connectedClient.username) == 0) {
+            for (auto&& connection : connectedClient.openConnections) {
+                if (strcmp(clientInfo.ip, connection.ip) == 0) {
+                    printf("Updating socket for client %s\n", username.c_str());
+                    connection.socket = clientInfo.socket;
+                    ipConnected = true;
+                }
+            }
+            if (!ipConnected) {
+                printf("New ip connected for client %s\n", username.c_str());
+                connectedClient.openConnections.push_back(clientInfo);
+            }
+        }
+    }
 }
 
 void ConnectionHandler :: addSocketToClient(const string& username, ClientInfo clientInfo) {

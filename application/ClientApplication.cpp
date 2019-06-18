@@ -147,14 +147,14 @@ void *handleNotifyEvents(void* dummy) {
 }
 
 void *handleNewServer(void* dummy) {
-    printf("I will open a socket in port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
+    // printf("I will open a socket in port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
     ServerSocketWrapper miniServerSocket;
     miniServerSocket.listenOnPort(ReplicationHelper::PORT_TO_NEW_SERVER);
     if (!miniServerSocket.openSocket())
         printf("Error openning socket\n");
     miniServerSocket.setNumberOfClients(1);
     while(true) {
-        printf("I will wait for new servers on port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
+        // printf("I will wait for new servers on port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
         Connection clientConnection = miniServerSocket.acceptClientConnection();
         if (clientConnection.descriptor < 0)
             continue;
@@ -167,6 +167,8 @@ void *handleNewServer(void* dummy) {
             printf("Cannot set server\n");
         if (!clientSocket.connectToServer())
             printf("Cannot connect to server\n");
+        if (!clientSocket.identifyUsername(clientUsername))
+            printf("Error identifying\n");
     }
 }
 

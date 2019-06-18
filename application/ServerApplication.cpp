@@ -79,19 +79,22 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                 if (packet->currentPartIndex == packet->numberOfParts) {
                     WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
                     for (auto openConnection : connectedClient.openConnections) {
-                        if (!receivedFromTheCurrentOpenSocket(socket, openConnection.socket))
+                        if (!receivedFromTheCurrentOpenSocket(socket, openConnection.socket)) {
+                            printf("GOT FROM: %i! I will send to client %s on socket %i\n", socket, openConnection.ip, openConnection.socket);
                             serverSocket.sendSyncFile(openConnection.socket, file);
+                        }
                     }
                 }
-                for (auto mirror : replicationHelper.getMirrors())
+                for (auto mirror : replicationHelper.getMirrors()) {
+                    printf ("I will replicate to mirror %s:%i\n", mirror.ip, mirror.port);
                     serverSocket.sendPacketToClient(mirror.socket, packet);
+                }
             }
-
             break;
         }
 
 		case DOWNLOAD_REQUISITION: {
-            printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
+            // printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
 
             WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->payload);
             serverSocket.sendDownloadedFile(socket, file);
@@ -100,7 +103,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case ASK_FOR_SYNC_FILE: {
-            printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
+            // printf("\nI'll try to send file %s to client of socket %i\n", packet->payload, socket);
 
             WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->payload);
             serverSocket.sendSyncFile(socket, file);
@@ -130,10 +133,10 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             connHandler.addSocketToClient(packet->payload, ClientInfo(socket, packet->ip));
 
             if (replicationHelper.isMainServer()) {
-                printf("I will send this identification to all my mirrors\n");
+                // printf("I will send this identification to all my mirrors\n");
                 for (auto mirror : replicationHelper.getMirrors()) {
                     if (serverSocket.sendPacketToClient(mirror.socket, packet))
-                        printf("Sent with success to mirror %s:%i\n", mirror.ip, mirror.port);                    
+                        printf("Sent %s identification to mirror %s:%i\n", packet->payload, mirror.ip, mirror.port);                    
                 }
             }
             break;
@@ -166,25 +169,29 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             break;
         }
     }
-
+    printf("Quiting handle received packet\n");
 	return shouldKeepExecuting;
 }
 
 void *handleNewConnection(void *voidSocket) {
 	int socket = *(int*) voidSocket;
+    printf("Handling connection on socket %i\n", socket);
 	bool shouldKeepExecuting = true;
     while(shouldKeepExecuting) {
+        printf("Waiting for packet\n");
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
+        printf("Packet received\n");
         if (packet != NULL)
 		    shouldKeepExecuting = handleReceivedPacket(socket, packet);
+        printf("Im back\n");
 	}
 }
-int x = 0;
+
 void *handleMainServerAnswers(void *voidSocket) {
 	int socket = *(int*) voidSocket;
     // serverSocket.setTimeoutForBlockingCalls(ReplicationHelper::TIMEOUT_TO_START_ELECTION);
 	while(!replicationHelper.isMainServer()) {
-        Packet* packet = serverSocket.receivePacketFromClient(socket);
+        Packet* packet = serverSocket.receivePacketFromClient(socket, 5);
         if (packet != NULL)
             handleReceivedPacket(socket, packet);
 	}
@@ -192,21 +199,20 @@ void *handleMainServerAnswers(void *voidSocket) {
 }
 
 void identifyAsCoordinator() {
-    printf("I'm the NEW COORD: I will warn all users\n");
+    printf("I'm the NEW SERVER\n");
     ClientSocketWrapper miniClientSocket;
     for (auto user : connHandler.getAllConnectedUsers()) {
-        printf("Warning user %s\n", user.username.c_str());
         for (auto connection : user.openConnections) {
-            printf("Warning client on %s:%i\n", connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER);
+            printf("Warning user %s:client %s:%i\n", user.username.c_str(), connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER);
             if (!miniClientSocket.setServer(connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER))
                 printf("Error setting server\n");
             if (!miniClientSocket.connectToServer())
                 printf("Error connecting\n");
-            if (!miniClientSocket.identifyAsNewServer(serverSocket.getPort()));
-                printf("Error identifiying\n");
+            miniClientSocket.identifyAsNewServer(serverSocket.getPort());
+            // miniClientSocket.closeSocket();
         }
     }
-    printf("NOW I'M THE BOSS\n");
+    printf("Now everybody knows I'm the main server\n");
     replicationHelper.setAsMainServer();
 }
 

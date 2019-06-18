@@ -34,8 +34,11 @@ bool ServerSocketWrapper :: sendPacketToClient(SocketDescriptor clientConnection
 
 Connection ServerSocketWrapper :: acceptClientConnection() {
     Connection connection;
+    // printf("Entered accept\n");
     memset(&connection, 0, sizeof(Connection));
+    // printf("Socket dec is %i\n", socketDescriptor);
     connection.descriptor = accept(this->socketDescriptor, (struct sockaddr *) &connection.address, &connection.lenght);
+    // printf("Accept done\n");
     return connection;
 }
 
@@ -62,7 +65,7 @@ bool ServerSocketWrapper :: sendFileToClient(Command command, SocketDescriptor c
         printf("Error sending file %s\n", file.filename);
         return false;
     }
-    printf("File sent with success to connection %i!\n", clientConnectionDescriptor);
+    printf("File %s sent with success to connection %i!\n", file.filename, clientConnectionDescriptor);
     return true;
 }
 
