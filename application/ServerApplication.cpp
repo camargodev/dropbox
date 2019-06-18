@@ -249,11 +249,28 @@ void identifyAsCoordinator() {
     replicationHelper.setAsMainServer();
 }
 
+void *checkForElectionAnswersOnNewThread(void *dummy) {
+    bool isTheNewCoordinator = false;
+    while (!electionHelper.hasReceivedAnswer() && !isTheNewCoordinator) {
+        Clock clocksWithoutAnswer = clock() - electionHelper.getClockWhenElectionStarted();
+        double secondsWithoutAnswer = ((double) clocksWithoutAnswer)/CLOCKS_PER_SEC;
+        isTheNewCoordinator = secondsWithoutAnswer >= ElectionHelper::TIMEOUT_FOR_COORDINATOR;
+    }
+    if (isTheNewCoordinator)
+        printf("I AM THE NEW COORDINATOR\n");
+    return nullptr;
+}
+
+void checkForElectionAnswers() {
+    pthread_t electionThread;
+    pthread_create(&electionThread, NULL, checkForElectionAnswersOnNewThread, NULL);
+}
+
 void startElection() {
     AddressGetter addressGetter;
     if (electionHelper.hasAlreadyStartedElection())
         return;
-    // printf("Starting election\n");
+    checkForElectionAnswers();
     Mirror me = Mirror(addressGetter.getIP(), myPort);
     auto mirrorsWithHigherPrio = electionHelper.getMirrorsWithHighestPrio(me, replicationHelper.getMirrors());
     for (auto mirror : mirrorsWithHigherPrio) {

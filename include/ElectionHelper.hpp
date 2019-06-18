@@ -17,10 +17,12 @@ public:
     void setElectionAsStarted();
     void confirmAnswerReceived();
     bool hasReceivedAnswer();
+    Clock getClockWhenElectionStarted();
 
 private:
     bool electionAlreadyStarted = false;
     bool receivedAnswer = false;
+    Clock clockWhenElectionStarted;
 };
 
 #endif 

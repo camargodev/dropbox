@@ -36,6 +36,7 @@ bool ElectionHelper :: hasAlreadyStartedElection() {
 
 void ElectionHelper :: setElectionAsStarted() {
     electionAlreadyStarted = true;
+    clockWhenElectionStarted = clock();
 }
 
 bool ElectionHelper :: hasReceivedAnswer() {
@@ -47,4 +48,8 @@ bool ElectionHelper :: hasReceivedAnswer() {
 
 void ElectionHelper :: confirmAnswerReceived() {
     receivedAnswer = true;
+}
+
+Clock ElectionHelper :: getClockWhenElectionStarted() {
+    return clockWhenElectionStarted;
 }
