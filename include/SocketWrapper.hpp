@@ -11,7 +11,7 @@
 #include "Connection.hpp"
 #include "Packet.hpp"
 #include "ClientFileHandler.hpp"
-
+#include "AddressGetter.hpp"
 
 using namespace std;
 
@@ -32,12 +32,15 @@ class SocketWrapper {
         void closeSocket();
         bool sendFileList(SocketDescriptor connectionDescriptor, vector<FileForListing> files);
         bool sendFileListForSyncDir(SocketDescriptor connectionDescriptor, vector<FileForListing> files);
+        void setTimeoutForBlockingCalls(int timeoutInSeconds);
 
     protected:
         SocketDescriptor socketDescriptor;
+        AddressGetter addressGetter;
 
         sockaddr_in buildDefaultAddress(int port);
         Packet* receivePacket(SocketDescriptor connectionDescriptor);
+        Packet* receivePacket(SocketDescriptor connectionDescriptor, int timeout);
         bool sendPacket(SocketDescriptor connectionDescriptor, Packet* packet);
         bool sendFile(int command, SocketDescriptor connectionDescriptor, WrappedFile WrappedFile);
 

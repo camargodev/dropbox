@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "../include/ClientSocketWrapper.hpp"
+#include "../include/ServerSocketWrapper.hpp"
 #include "../include/ClientSyncWrapper.hpp"
 #include "../include/InputHandler.hpp"
 #include "../include/PacketHandler.hpp"
@@ -89,15 +90,16 @@ void handleReceivedPacket(Packet* packet) {
                 fileHandler.printFileList(receivedFileList);
                 receivedFileList.clear();
             }
-        }
             break;
+        }
     }
 }
 
 void *handleServerAnswers(void* dummy) {
     while (true) {
-        Packet* packet = clientSocket.receivePacketFromServer();
-        handleReceivedPacket(packet);
+        Packet* packet = clientSocket.receivePacketFromServer(3);
+        if (packet != NULL)
+            handleReceivedPacket(packet);
     }
 }
 
@@ -144,6 +146,32 @@ void *handleNotifyEvents(void* dummy) {
     }
 }
 
+void *handleNewServer(void* dummy) {
+    // printf("I will open a socket in port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
+    ServerSocketWrapper miniServerSocket;
+    miniServerSocket.listenOnPort(ReplicationHelper::PORT_TO_NEW_SERVER);
+    if (!miniServerSocket.openSocket())
+        printf("Error openning socket\n");
+    miniServerSocket.setNumberOfClients(1);
+    while(true) {
+        // printf("I will wait for new servers on port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
+        Connection clientConnection = miniServerSocket.acceptClientConnection();
+        if (clientConnection.descriptor < 0)
+            continue;
+        Packet* packet = miniServerSocket.receivePacketFromClient(clientConnection.descriptor);
+        if (packet == NULL)
+            continue;
+        printf("My new server will be %s:%i\n", packet->ip, packet->port);
+        clientSocket.closeSocket();
+        if (!clientSocket.setServer(packet->ip, packet->port))
+            printf("Cannot set server\n");
+        if (!clientSocket.connectToServer())
+            printf("Cannot connect to server\n");
+        if (!clientSocket.identifyUsername(clientUsername))
+            printf("Error identifying\n");
+    }
+}
+
 int main(int argc, char *argv[])
 {
     ClientInput input = getServerToConnect(argc, argv);
@@ -165,9 +193,10 @@ int main(int argc, char *argv[])
 
     fileHandler.createDir();
 
-    pthread_t connectionThread, notifyThread;
+    pthread_t connectionThread, notifyThread, newServerThread;
     pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
     pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
+    pthread_create(&newServerThread, NULL, handleNewServer, NULL);
 
     clientSocket.getSyncDir();
 

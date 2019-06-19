@@ -6,6 +6,7 @@ int calculateNumberOfPayloads(const char* filename);
 bool ClientSocketWrapper :: setServer(string hostname, int port) {
     this->socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
     hostent* host = gethostbyname(hostname.c_str());
+    setTimeoutForBlockingCalls(5);
     if (host != NULL) {
         this->serverAddress = this->buildAddress(*((struct in_addr *)host->h_addr), port);
         return true;
@@ -14,7 +15,8 @@ bool ClientSocketWrapper :: setServer(string hostname, int port) {
 }
 
 bool ClientSocketWrapper :: connectToServer() {
-    return connect(this->socketDescriptor,(struct sockaddr *) &this->serverAddress, sizeof(this->serverAddress)) >= 0;
+    int result = connect(this->socketDescriptor,(struct sockaddr *) &this->serverAddress, sizeof(this->serverAddress));
+    return result >= 0;
 }
 
 sockaddr_in ClientSocketWrapper :: buildAddress(in_addr hostname, int port) {
@@ -26,6 +28,11 @@ sockaddr_in ClientSocketWrapper :: buildAddress(in_addr hostname, int port) {
 Packet* ClientSocketWrapper :: receivePacketFromServer() {
     return receivePacket(this->socketDescriptor);
 }
+
+Packet* ClientSocketWrapper :: receivePacketFromServer(int timeout) {
+    return receivePacket(this->socketDescriptor, timeout);
+}
+
 
 bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
     return sendPacket(this->socketDescriptor, packet);
@@ -39,6 +46,7 @@ bool ClientSocketWrapper :: identifyUsername(char* username) {
     strcpy(packet->filename, "");
     packet->currentPartIndex = 1;
     packet->numberOfParts = 1;
+    strcpy(packet->ip, this->addressGetter.getIP());
     return sendPacketToServer(packet);
 }
 
@@ -67,6 +75,34 @@ bool ClientSocketWrapper :: askToDownloadFile(char* filename) {
     return sendPacketToServer(&packet);
 }
 
+bool ClientSocketWrapper :: identifyAsMirror(int port) {
+    Packet packet(MIRROR);
+    strcpy(packet.ip, this->addressGetter.getIP());
+    packet.port = port;
+    return sendPacketToServer(&packet);
+}
+
+bool ClientSocketWrapper :: identifyAsNewServer(int port) {
+    Packet packet;
+    strcpy(packet.ip, this->addressGetter.getIP());
+    packet.port = port;
+    return sendPacketToServer(&packet);
+}
+
+bool ClientSocketWrapper :: identifyAsNewCoordinator(int port) {
+    Packet packet(COORDINATOR);
+    strcpy(packet.ip, this->addressGetter.getIP());
+    packet.port = port;
+    return sendPacketToServer(&packet);
+}
+
+bool ClientSocketWrapper :: sendMirrorForUpdate(int port) {
+    Packet packet(MIRROR_UPDATE);
+    strcpy(packet.ip, this->addressGetter.getIP());
+    packet.port = port;
+    return sendPacketToServer(&packet);
+}
+
 bool ClientSocketWrapper :: getFileFromSyncDir(char* filename) {
     Packet packet(ASK_FOR_SYNC_FILE, sizeof(filename), filename);
     return sendPacketToServer(&packet);
@@ -86,3 +122,16 @@ void ClientSocketWrapper :: getSyncDir() {
     Packet packet(GET_SYNC_DIR);
     sendPacketToServer(&packet);
 }
+
+bool ClientSocketWrapper :: sendElectionMessage(Mirror mirror) {
+    Packet packet(ELECTION);
+    strcpy(packet.ip, mirror.ip);
+    packet.port = mirror.port;
+    return sendPacketToServer(&packet);
+}
+
+bool ClientSocketWrapper :: sendElectionAnswer() {
+    Packet packet(ANSWER);
+    return sendPacketToServer(&packet);
+}
+

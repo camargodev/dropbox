@@ -20,7 +20,11 @@ sockaddr_in ServerSocketWrapper :: buildAddress(int port) {
 }
 
 Packet* ServerSocketWrapper :: receivePacketFromClient(SocketDescriptor clientConnectionDescriptor) {
-    Packet* packet = receivePacket(clientConnectionDescriptor);
+    return this->receivePacketFromClient(clientConnectionDescriptor, 0);
+}
+
+Packet* ServerSocketWrapper :: receivePacketFromClient(SocketDescriptor clientConnectionDescriptor, int timeout) {
+    Packet* packet = receivePacket(clientConnectionDescriptor, timeout);
     return packet;
 }
 
@@ -30,8 +34,11 @@ bool ServerSocketWrapper :: sendPacketToClient(SocketDescriptor clientConnection
 
 Connection ServerSocketWrapper :: acceptClientConnection() {
     Connection connection;
+    // printf("Entered accept\n");
     memset(&connection, 0, sizeof(Connection));
+    // printf("Socket dec is %i\n", socketDescriptor);
     connection.descriptor = accept(this->socketDescriptor, (struct sockaddr *) &connection.address, &connection.lenght);
+    // printf("Accept done\n");
     return connection;
 }
 
@@ -58,7 +65,18 @@ bool ServerSocketWrapper :: sendFileToClient(Command command, SocketDescriptor c
         printf("Error sending file %s\n", file.filename);
         return false;
     }
-    printf("File sent with success to connection %i!\n", clientConnectionDescriptor);
+    printf("File %s sent with success to connection %i!\n", file.filename, clientConnectionDescriptor);
     return true;
+}
+
+bool ServerSocketWrapper :: sendMirror(SocketDescriptor socket, Mirror mirror) {
+    Packet packet(MIRROR_REPLICATION);
+    strcpy(packet.ip, mirror.ip);
+    packet.port = mirror.port;
+    return this->sendPacketToClient(socket, &packet);
+};
+
+int ServerSocketWrapper :: getPort() {
+    return this->port;
 }
 
