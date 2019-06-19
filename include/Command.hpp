@@ -26,6 +26,7 @@ const Command IM_ALIVE                = 50000;
 const Command TIMEOUT_TEST            = 60000;
 const Command MIRROR                  = 12345;
 const Command MIRROR_REPLICATION      = 54321;
+const Command MIRROR_UPDATE           = 21354;
 const Command NEW_SERVER              = 14051997;
 #endif
 

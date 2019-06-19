@@ -96,6 +96,13 @@ bool ClientSocketWrapper :: identifyAsNewCoordinator(int port) {
     return sendPacketToServer(&packet);
 }
 
+bool ClientSocketWrapper :: sendMirrorForUpdate(int port) {
+    Packet packet(MIRROR_UPDATE);
+    strcpy(packet.ip, this->addressGetter.getIP());
+    packet.port = port;
+    return sendPacketToServer(&packet);
+}
+
 bool ClientSocketWrapper :: getFileFromSyncDir(char* filename) {
     Packet packet(ASK_FOR_SYNC_FILE, sizeof(filename), filename);
     return sendPacketToServer(&packet);

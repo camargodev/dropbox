@@ -26,3 +26,28 @@ void ReplicationHelper :: addMirror(Mirror mirror) {
 vector<Mirror>  ReplicationHelper :: getMirrors() {
     return this->mirrors;
 }
+
+void ReplicationHelper :: removeMirrorFromList(Mirror mirrorToRemove) {
+    sem_wait(&processing);
+    int index = 0;
+    for (auto mirror : this->mirrors) {
+        if (strcmp(mirror.ip, mirrorToRemove.ip) == 0 && mirror.port == mirrorToRemove.port) {
+            mirrors.erase(mirrors.begin() + index);
+            break;
+        }
+        index += 1;
+    }
+    sem_post(&processing);
+}
+
+void ReplicationHelper :: addSocketToMirror(Mirror mirrorToAddSocket, SocketDescriptor socket) {
+    sem_wait(&processing);
+    for (auto&& mirror : this->mirrors) {
+        if (strcmp(mirror.ip, mirrorToAddSocket.ip) == 0 && mirror.port == mirrorToAddSocket.port) {
+            mirror.socket = socket;
+            printf("Setting socket %i to mirror %s:%i\n", socket, mirrorToAddSocket.ip, mirrorToAddSocket.port);
+            break;
+        }
+    }
+    sem_post(&processing);
+}

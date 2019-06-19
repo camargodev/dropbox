@@ -53,3 +53,11 @@ void ElectionHelper :: confirmAnswerReceived() {
 Clock ElectionHelper :: getClockWhenElectionStarted() {
     return clockWhenElectionStarted;
 }
+
+void ElectionHelper :: reset() {
+    sem_wait(&dealingWithMirrors);
+    receivedAnswer = false; 
+    electionAlreadyStarted = false;
+    clockWhenElectionStarted = clock();
+    sem_post(&dealingWithMirrors);
+}

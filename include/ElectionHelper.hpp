@@ -18,6 +18,7 @@ public:
     void confirmAnswerReceived();
     bool hasReceivedAnswer();
     Clock getClockWhenElectionStarted();
+    void reset();
 
 private:
     bool electionAlreadyStarted = false;

@@ -19,7 +19,7 @@ ClientSocketWrapper clientSocket;
 ServerFileHandler fileHandler;
 ReplicationHelper replicationHelper;
 ElectionHelper electionHelper;
-sem_t handling;
+sem_t electionRunning;
 int myPort;
 
 int getServerPort(int argc, char *argv[]) {
@@ -36,7 +36,8 @@ bool messageRequiresUserAlreadyConnected(Command command) {
     return !(command == IM_ALIVE || command == MIRROR 
         || command == MIRROR_REPLICATION || command == SIMPLE_MESSAGE
         || command == IDENTIFICATION || command == ELECTION
-        || command == ANSWER || command == COORDINATOR);
+        || command == ANSWER || command == COORDINATOR
+        || command == MIRROR_UPDATE);
 }
 
 bool handleReceivedPacket(int socket, Packet* packet) {
@@ -45,7 +46,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
     ConnectedUser connectedClient = connHandler.getConnectedClientBySocket(socket);
     
     if (!connectedClient.valid && messageRequiresUserAlreadyConnected(packet->command)) {
-        printf("I need a user and could not find a valid one\n");
+        printf("I need a user for command %i and could not find a valid one\n", packet->command);
         return shouldKeepExecuting;
     }
 	
@@ -64,12 +65,21 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case MIRROR_REPLICATION: {
-            Mirror mirror = Mirror(socket, packet->ip, packet->port);
+            Mirror mirror = Mirror(-1, packet->ip, packet->port);
             replicationHelper.addMirror(mirror);
             printf("\nMirrors I know:\n");
             for (auto existingMirror : replicationHelper.getMirrors()) {
                 printf("  Mirror in %s:%i\n", existingMirror.ip, existingMirror.port);
             }
+            break;
+        }
+
+        case MIRROR_UPDATE: {
+            Mirror mirror = Mirror(packet->ip, packet->port);
+            replicationHelper.addSocketToMirror(mirror, socket);
+            Packet answer(SIMPLE_MESSAGE);
+            strcpy(answer.payload, "EAEAEAE");
+            serverSocket.sendPacketToClient(socket, &answer);
             break;
         }
 
@@ -185,6 +195,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
         case IM_ALIVE: {
             replicationHelper.lastSignalFromServer = clock();
+            // printf("My server is alive\n");
             break;
         }
 
@@ -209,6 +220,18 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
         case COORDINATOR: {
             printf("My new coord is %s:%i\n", packet->ip, packet->port);
+            clientSocket.closeSocket();
+
+            if (!clientSocket.setServer(packet->ip, packet->port))
+                printf("Error setting server\n");
+            if (!clientSocket.connectToServer())
+                printf("Error connecting\n");
+            // clientSocket.sendMirrorForUpdate(myPort);
+
+            replicationHelper.removeMirrorFromList(Mirror(packet->ip, packet->port));
+            electionHelper.reset();
+
+            // sem_post(&electionRunning);
             break;
         }
     }
@@ -227,12 +250,12 @@ void *handleNewConnection(void *voidSocket) {
     return nullptr;
 }
 
-void *handleMainServerAnswers(void *voidSocket) {
-    int socket = *(int*) voidSocket;
+void *handleMainServerAnswers(void *dummy) {
     while(!replicationHelper.isMainServer()) {
         Packet* packet = clientSocket.receivePacketFromServer(5);
-        if (packet != NULL)
-            handleReceivedPacket(socket, packet);
+        if (packet != NULL) {
+            handleReceivedPacket(clientSocket.getSocketDescriptor(), packet);
+        }
 	}
     return nullptr;
 }
@@ -248,18 +271,23 @@ void identifyAsCoordinator() {
             if (!miniClientSocket.connectToServer())
                 printf("Error connecting\n");
             miniClientSocket.identifyAsNewServer(serverSocket.getPort());
-            // miniClientSocket.closeSocket();
+            miniClientSocket.closeSocket();
         }
     }
     for (auto mirror : replicationHelper.getMirrors()) {
-        if (!miniClientSocket.setServer(mirror.ip, mirror.port))
-            printf("Error setting server\n");
-        if (!miniClientSocket.connectToServer())
-            printf("Error connecting\n");
+        if (mirror.socket == -1) {
+            if (!miniClientSocket.setServer(mirror.ip, mirror.port))
+                printf("Error setting server\n");
+            if (!miniClientSocket.connectToServer())
+                printf("Error connecting\n");
+            replicationHelper.addSocketToMirror(mirror, miniClientSocket.getSocketDescriptor());
+        }
         miniClientSocket.identifyAsNewCoordinator(serverSocket.getPort());
+        // miniClientSocket.closeSocket();
     }
     printf("Now everybody knows I'm the main server\n");
     replicationHelper.setAsMainServer();
+    // sem_post(&electionRunning);
 }
 
 void *checkForElectionAnswersOnNewThread(void *dummy) {
@@ -267,6 +295,7 @@ void *checkForElectionAnswersOnNewThread(void *dummy) {
     while (!electionHelper.hasReceivedAnswer() && !isTheNewCoordinator) {
         Clock clocksWithoutAnswer = clock() - electionHelper.getClockWhenElectionStarted();
         double secondsWithoutAnswer = ((double) clocksWithoutAnswer)/CLOCKS_PER_SEC;
+        //printf("%f without signal\n", secondsWithoutAnswer);
         isTheNewCoordinator = secondsWithoutAnswer >= ElectionHelper::TIMEOUT_FOR_COORDINATOR;
     }
     if (isTheNewCoordinator)
@@ -280,6 +309,7 @@ void checkForElectionAnswers() {
 }
 
 void startElection() {
+    // printf("I WILL START AN ELECTION\n");
     AddressGetter addressGetter;
     if (electionHelper.hasAlreadyStartedElection())
         return;
@@ -294,6 +324,7 @@ void startElection() {
             printf("Error connecting\n");
         if (!miniClientSocket.sendElectionMessage(me))
             printf("Error sending election\n");
+        replicationHelper.addSocketToMirror(mirror, miniClientSocket.getSocketDescriptor());
     }
     electionHelper.setElectionAsStarted();
 }
@@ -302,16 +333,20 @@ void *processLivenessOnNewThread(void *dummy) {
     while(true) {
         if (replicationHelper.isMainServer()){
             for (auto mirror : replicationHelper.getMirrors()) {
-                // printf("Sending Im alive\n");
-                Packet packet(IM_ALIVE);
-                serverSocket.sendPacketToClient(mirror.socket, &packet);
+                if (mirror.socket <= 0)
+                    continue;
+                // printf("Sending Im alive for %i (%s:%i)\n", mirror.socket, mirror.ip, mirror.port);
+                Packet imAlivePacket(IM_ALIVE);
+                serverSocket.sendPacketToClient(mirror.socket, &imAlivePacket);
             }
         } else {
+            // sem_wait(&electionRunning);
             Clock clocksWithoutSignal = clock() - replicationHelper.lastSignalFromServer;
             double timeWithoutSignal = ((double) clocksWithoutSignal)/CLOCKS_PER_SEC;
             if (timeWithoutSignal >= ReplicationHelper::TIMEOUT_TO_START_ELECTION) {
                 startElection();
-                break;
+            } else {
+                // sem_post(&electionRunning);
             }
         }
         sleep(ReplicationHelper::LIVENESS_NOTIFICATION_DELAY);
@@ -335,8 +370,7 @@ void processNewClientConnected() {
 
 void processMainServerAnswers() {
     pthread_t connectionThread;
-    int descriptor = clientSocket.getSocketDescriptor();
-    pthread_create(&connectionThread, NULL, handleMainServerAnswers, &descriptor);
+    pthread_create(&connectionThread, NULL, handleMainServerAnswers, NULL);
     // pthread_join(connectionThread, NULL);
 }
 
@@ -365,7 +399,7 @@ int main(int argc, char *argv[]) {
 
     myPort = getServerPort(argc, argv);
 	serverSocket.listenOnPort(myPort);
-    sem_init(&handling, 0, 1);
+    sem_init(&electionRunning, 0, 1);
     
     if (isMirror(argc)) {
         connectAsMirror(argv);

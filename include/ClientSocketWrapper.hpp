@@ -23,6 +23,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool askForFileList();
         void getSyncDir();
         bool identifyAsMirror(int port);
+        bool sendMirrorForUpdate(int port);
         bool identifyAsNewServer(int port);
         bool identifyAsNewCoordinator(int port);
         bool sendElectionMessage(Mirror mirror);

@@ -27,9 +27,9 @@ Packet* SocketWrapper :: receivePacket(int connectionDescriptor, int timeout) {
         alreadyReadBytes = read(connectionDescriptor, (packet + totalReadBytes), bytesToRead);
         totalReadBytes += alreadyReadBytes;
 
-        if(timeout > 0 && totalReadBytes == 0 && time(0) - start >= timeout) return NULL;
+        if(timeout > 0 && totalReadBytes == 0 && time(0) - start >= timeout) 
+            return NULL;
     }
-
     return (Packet*) packet;
 }
 

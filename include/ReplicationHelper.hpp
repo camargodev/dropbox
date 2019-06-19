@@ -38,6 +38,8 @@ public:
     void addMirror(Mirror mirro);
     vector<Mirror> getMirrors();
     Clock lastSignalFromServer;
+    void removeMirrorFromList(Mirror mirror);
+    void addSocketToMirror(Mirror mirror, SocketDescriptor socket);
 private:
     vector<Mirror> mirrors;
     bool isTheMainServer;
