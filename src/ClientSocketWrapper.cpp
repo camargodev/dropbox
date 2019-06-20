@@ -130,8 +130,10 @@ bool ClientSocketWrapper :: sendElectionMessage(Mirror mirror) {
     return sendPacketToServer(&packet);
 }
 
-bool ClientSocketWrapper :: sendElectionAnswer() {
+bool ClientSocketWrapper :: sendElectionAnswer(Mirror mirror) {
     Packet packet(ANSWER);
+    strcpy(packet.ip, mirror.ip);
+    packet.port = mirror.port;
     return sendPacketToServer(&packet);
 }
 
