@@ -19,7 +19,7 @@ ClientSocketWrapper clientSocket;
 ServerFileHandler fileHandler;
 ReplicationHelper replicationHelper;
 ElectionHelper electionHelper;
-sem_t electionRunning;
+sem_t waitingForElectionResults;
 int myPort;
 
 int getServerPort(int argc, char *argv[]) {
@@ -195,14 +195,15 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
         case IM_ALIVE: {
             replicationHelper.lastSignalFromServer = clock();
-            // printf("My server is alive\n");
+            printf("My server is alive\n");
             break;
         }
 
         case ELECTION: {
             ClientSocketWrapper miniClientSocket;
             printf("Mirror %s:%i sent a ELECTION\n", packet->ip, packet->port);
-            startElection();
+            if (!electionHelper.hasAlreadyStartedElection())
+                startElection();
             if (!miniClientSocket.setServer(packet->ip, packet->port))
                 printf("Error setting server\n");
             if (!miniClientSocket.connectToServer())
@@ -212,14 +213,13 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case ANSWER: {
-            if (!electionHelper.hasReceivedAnswer())
-                printf("I received an answer and will wait for coord\n");
+            printf("I received an answer and will wait for coord\n");
             electionHelper.confirmAnswerReceived();
             break;
         }
 
         case COORDINATOR: {
-            printf("My new coord is %s:%i\n", packet->ip, packet->port);
+            printf("\nMy new COORD is %s:%i\n", packet->ip, packet->port);
             clientSocket.closeSocket();
 
             if (!clientSocket.setServer(packet->ip, packet->port))
@@ -230,8 +230,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
             replicationHelper.removeMirrorFromList(Mirror(packet->ip, packet->port));
             electionHelper.reset();
-
-            // sem_post(&electionRunning);
+            sem_post(&waitingForElectionResults);
+            
             break;
         }
     }
@@ -252,7 +252,7 @@ void *handleNewConnection(void *voidSocket) {
 
 void *handleMainServerAnswers(void *dummy) {
     while(!replicationHelper.isMainServer()) {
-        Packet* packet = clientSocket.receivePacketFromServer(5);
+        Packet* packet = clientSocket.receivePacketFromServer(3);
         if (packet != NULL) {
             handleReceivedPacket(clientSocket.getSocketDescriptor(), packet);
         }
@@ -261,7 +261,7 @@ void *handleMainServerAnswers(void *dummy) {
 }
 
 void identifyAsCoordinator() {
-    printf("I'm the NEW COORDINATOR\n");
+    printf("\nI'm the NEW COORD\n");
     ClientSocketWrapper miniClientSocket;
     for (auto user : connHandler.getAllConnectedUsers()) {
         for (auto connection : user.openConnections) {
@@ -287,7 +287,6 @@ void identifyAsCoordinator() {
     }
     printf("Now everybody knows I'm the main server\n");
     replicationHelper.setAsMainServer();
-    // sem_post(&electionRunning);
 }
 
 void *checkForElectionAnswersOnNewThread(void *dummy) {
@@ -296,10 +295,11 @@ void *checkForElectionAnswersOnNewThread(void *dummy) {
         Clock clocksWithoutAnswer = clock() - electionHelper.getClockWhenElectionStarted();
         double secondsWithoutAnswer = ((double) clocksWithoutAnswer)/CLOCKS_PER_SEC;
         //printf("%f without signal\n", secondsWithoutAnswer);
-        isTheNewCoordinator = secondsWithoutAnswer >= ElectionHelper::TIMEOUT_FOR_COORDINATOR;
+        isTheNewCoordinator = secondsWithoutAnswer >= ElectionHelper::TIMEOUT_FOR_ANSWER;
     }
     if (isTheNewCoordinator)
         identifyAsCoordinator();
+    // printf("QUIT CHECK METHOD\n");
     return nullptr;
 }
 
@@ -309,10 +309,10 @@ void checkForElectionAnswers() {
 }
 
 void startElection() {
-    // printf("I WILL START AN ELECTION\n");
+    sem_wait(&waitingForElectionResults);
     AddressGetter addressGetter;
-    if (electionHelper.hasAlreadyStartedElection())
-        return;
+    printf("I WILL START AN ELECTION\n");
+    electionHelper.setElectionAsStarted();
     checkForElectionAnswers();
     Mirror me = Mirror(addressGetter.getIP(), myPort);
     auto mirrorsWithHigherPrio = electionHelper.getMirrorsWithHighestPrio(me, replicationHelper.getMirrors());
@@ -326,7 +326,6 @@ void startElection() {
             printf("Error sending election\n");
         replicationHelper.addSocketToMirror(mirror, miniClientSocket.getSocketDescriptor());
     }
-    electionHelper.setElectionAsStarted();
 }
 
 void *processLivenessOnNewThread(void *dummy) {
@@ -340,13 +339,11 @@ void *processLivenessOnNewThread(void *dummy) {
                 serverSocket.sendPacketToClient(mirror.socket, &imAlivePacket);
             }
         } else {
-            // sem_wait(&electionRunning);
             Clock clocksWithoutSignal = clock() - replicationHelper.lastSignalFromServer;
             double timeWithoutSignal = ((double) clocksWithoutSignal)/CLOCKS_PER_SEC;
             if (timeWithoutSignal >= ReplicationHelper::TIMEOUT_TO_START_ELECTION) {
-                startElection();
-            } else {
-                // sem_post(&electionRunning);
+                if (!electionHelper.hasAlreadyStartedElection())
+                    startElection();
             }
         }
         sleep(ReplicationHelper::LIVENESS_NOTIFICATION_DELAY);
@@ -399,7 +396,7 @@ int main(int argc, char *argv[]) {
 
     myPort = getServerPort(argc, argv);
 	serverSocket.listenOnPort(myPort);
-    sem_init(&electionRunning, 0, 1);
+    sem_init(&waitingForElectionResults, 0, 1);
     
     if (isMirror(argc)) {
         connectAsMirror(argv);

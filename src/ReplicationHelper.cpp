@@ -45,7 +45,7 @@ void ReplicationHelper :: addSocketToMirror(Mirror mirrorToAddSocket, SocketDesc
     for (auto&& mirror : this->mirrors) {
         if (strcmp(mirror.ip, mirrorToAddSocket.ip) == 0 && mirror.port == mirrorToAddSocket.port) {
             mirror.socket = socket;
-            printf("Setting socket %i to mirror %s:%i\n", socket, mirrorToAddSocket.ip, mirrorToAddSocket.port);
+            // printf("Setting socket %i to mirror %s:%i\n", socket, mirrorToAddSocket.ip, mirrorToAddSocket.port);
             break;
         }
     }
