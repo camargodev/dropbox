@@ -198,10 +198,10 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
         case ELECTION: {
             ClientSocketWrapper miniClientSocket;
-            printf("ELECTION FROM %s:%i\n", packet->ip, packet->port);
+            // printf("ELECTION FROM %s:%i\n", packet->ip, packet->port);
             // sem_wait(&waitingForElectionResults);
             if (!electionHelper.hasAlreadyStartedElection()) {
-                printf("ON ELECTION RECEIVED!\n");
+                // printf("ON ELECTION RECEIVED!\n");
                 startElection();
             }
             // sem_post(&waitingForElectionResults);
@@ -209,19 +209,19 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                 printf("Error setting server\n");
             if (!miniClientSocket.connectToServer())
                 printf("Error connecting\n");
-            if (miniClientSocket.sendElectionAnswer(Mirror(addressGetter.getIP(), myPort)))
-                printf("ANSWER TO %s:%i\n", packet->ip, packet->port);
+            miniClientSocket.sendElectionAnswer(Mirror(addressGetter.getIP(), myPort));
+                // printf("ANSWER TO %s:%i\n", packet->ip, packet->port);
             break;
         }
 
         case ANSWER: {
-            printf("ANSWER FROM: %s:%i\n", packet->ip, packet->port);
+            // printf("ANSWER FROM: %s:%i\n", packet->ip, packet->port);
             electionHelper.confirmAnswerReceived();
             break;
         }
 
         case COORDINATOR: {
-            printf("\nCOORD IS: %s:%i\n", packet->ip, packet->port);
+            printf("NEW COORDINATOR: %s:%i\n", packet->ip, packet->port);
             clientSocket.closeSocket();
 
             if (!clientSocket.setServer(packet->ip, packet->port))
@@ -263,7 +263,7 @@ void *handleMainServerAnswers(void *dummy) {
 }
 
 void identifyAsCoordinator() {
-    printf("\nI'm the NEW COORD\n");
+    printf("NEW COORDINATOR: me\n");
     ClientSocketWrapper miniClientSocket;
     for (auto user : connHandler.getAllConnectedUsers()) {
         for (auto connection : user.openConnections) {
@@ -278,7 +278,7 @@ void identifyAsCoordinator() {
     }
     for (auto mirror : replicationHelper.getMirrors()) {
         if (mirror.socket == -1) {
-            printf("COORD TO %s:%i\n", mirror.ip, mirror.port);
+            // printf("COORD TO %s:%i\n", mirror.ip, mirror.port);
             if (!miniClientSocket.setServer(mirror.ip, mirror.port))
                 printf("Error setting server\n");
             if (!miniClientSocket.connectToServer())
@@ -288,7 +288,7 @@ void identifyAsCoordinator() {
         miniClientSocket.identifyAsNewCoordinator(serverSocket.getPort());
         // miniClientSocket.closeSocket();
     }
-    printf("Now everybody knows I'm the main server\n");
+    // printf("Now everybody knows I'm the main server\n");
     replicationHelper.setAsMainServer();
 }
 
@@ -312,7 +312,7 @@ void checkForElectionAnswers() {
 }
 
 void startElection() {
-    printf("I WILL START AN ELECTION\n");
+    //printf("I WILL START AN ELECTION\n");
     electionHelper.setElectionAsStarted();
     checkForElectionAnswers();
     Mirror me = Mirror(addressGetter.getIP(), myPort);
@@ -329,7 +329,7 @@ void startElection() {
         miniClientSocket.connectToServer();
         miniClientSocket.sendElectionMessage(me);
         replicationHelper.addSocketToMirror(mirror, miniClientSocket.getSocketDescriptor());
-        printf("ELECTION TO: %s:%i\n", mirror.ip, mirror.port);
+        // printf("ELECTION TO: %s:%i\n", mirror.ip, mirror.port);
     }
 }
 
@@ -348,7 +348,7 @@ void *processLivenessOnNewThread(void *dummy) {
             double timeWithoutSignal = ((double) clocksWithoutSignal)/CLOCKS_PER_SEC;
             // sem_wait(&waitingForElectionResults);
             if (timeWithoutSignal >= ReplicationHelper::TIMEOUT_TO_START_ELECTION) {
-                    printf("ON PROCESS LIVENESS WITH %f!\n", timeWithoutSignal);
+                    // printf("ON PROCESS LIVENESS WITH %f!\n", timeWithoutSignal);
                     startElection();
             }
             // sem_post(&waitingForElectionResults);
