@@ -7,8 +7,7 @@
 class ElectionHelper {
 
 public:
-    const static int TIMEOUT_FOR_ANSWER = 10;
-    const static int TIMEOUT_FOR_COORDINATOR = 10;
+    const static int TIMEOUT_FOR_ANSWER = 8;
 
     ElectionHelper();
     bool isOtherMirrorMorePrioritary(Mirror me, Mirror otherMirror);

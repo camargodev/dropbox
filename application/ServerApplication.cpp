@@ -20,7 +20,6 @@ ServerFileHandler fileHandler;
 ReplicationHelper replicationHelper;
 ElectionHelper electionHelper;
 AddressGetter addressGetter;
-sem_t waitingForElectionResults;
 int myPort;
 
 int getServerPort(int argc, char *argv[]) {
@@ -403,7 +402,7 @@ int main(int argc, char *argv[]) {
 
     myPort = getServerPort(argc, argv);
 	serverSocket.listenOnPort(myPort);
-    sem_init(&waitingForElectionResults, 0, 1);
+    // sem_init(&waitingForElectionResults, 0, 1);
     
     if (isMirror(argc)) {
         connectAsMirror(argv);
