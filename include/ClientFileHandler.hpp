@@ -23,6 +23,8 @@ class ClientFileHandler {
         string getDownloadFilepath(const char *filename);
         vector<FileForListing> getFiles();
 
+        void updateFolderNameForTesting(int port);
+
     protected:
         string path;
         string dirname;

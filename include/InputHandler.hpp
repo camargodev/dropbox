@@ -37,13 +37,16 @@ struct ClientInput{
     char* username;
     char* serverHostname;
     int serverPort;
+    int clientPort;
 
     ClientInput(char* username,
                 char* serverHostname,
-                int serverPort) {
+                int serverPort,
+                int clientPort) {
         this->username = username;
         this->serverHostname = serverHostname;
         this->serverPort = serverPort;
+        this->clientPort = clientPort;
     }
 };
 

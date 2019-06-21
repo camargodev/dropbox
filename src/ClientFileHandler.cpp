@@ -15,6 +15,10 @@ ClientFileHandler :: ClientFileHandler() {
     this->dirname = "sync_dir/";
 }
 
+void ClientFileHandler :: updateFolderNameForTesting(int port) {
+    this->dirname = "sync_dir_" + to_string(port) + "/";
+}
+
 void ClientFileHandler :: printFileList(vector<FileForListing> fileList) {
     int longestFilenameSize = getLongestFilenameSize(fileList);
 

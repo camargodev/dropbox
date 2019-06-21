@@ -15,7 +15,7 @@ class ClientSocketWrapper : public SocketWrapper {
         bool setServer(string serverHostname, int serverPort);
         bool connectToServer();
         bool uploadFileToServer(WrappedFile file);
-        bool identifyUsername(char* username);
+        bool identifyUsername(int port, char* username);
         bool disconnectFromServer();
         bool askToDownloadFile(char* filename);
         bool getFileFromSyncDir(char* filename);

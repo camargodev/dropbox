@@ -7,8 +7,8 @@ ServerFileHandler :: ServerFileHandler() : ClientFileHandler() {
     this->dirname = "archive/";
 }
 
-void ServerFileHandler :: configAsBackup() {
-    this->dirname = "backup_archive/";
+void ServerFileHandler :: configAsBackup(int port) {
+    this->dirname = "backup_archive_" + to_string(port) + "/";
 }
 
 void ServerFileHandler :: createClientDir(const char* username) {
