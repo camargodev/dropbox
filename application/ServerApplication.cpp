@@ -105,7 +105,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                     for (auto openConnection : connectedClient.openConnections) {
                         if (!receivedFromTheCurrentOpenSocket(socket, openConnection.socket)) {
                             printf("GOT FROM: %i! I will send to client %s on socket %i\n", socket, openConnection.ip, openConnection.socket);
-                            serverSocket.sendSyncFile(openConnection.socket, file);
+                            if (!serverSocket.sendSyncFile(openConnection.socket, file))
+                                printf("ESSE ERRO N PODE ACONTECER\n");
                         }
                     }
                 }
@@ -204,9 +205,9 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             }
             // sem_post(&waitingForElectionResults);
             if (!miniClientSocket.setServer(packet->ip, packet->port))
-                printf("Error setting server\n");
+                printf("Election: Error setting server\n");
             if (!miniClientSocket.connectToServer())
-                printf("Error connecting\n");
+                printf("Election: Error connecting\n");
             miniClientSocket.sendElectionAnswer(Mirror(addressGetter.getIP(), myPort));
                 // printf("ANSWER TO %s:%i\n", packet->ip, packet->port);
             break;
@@ -223,9 +224,9 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             clientSocket.closeSocket();
 
             if (!clientSocket.setServer(packet->ip, packet->port))
-                printf("Error setting server\n");
+                printf("Coord: Error setting server\n");
             if (!clientSocket.connectToServer())
-                printf("Error connecting\n");
+                printf("Coord: Error connecting\n");
             // clientSocket.sendMirrorForUpdate(myPort);
 
             replicationHelper.removeMirrorFromList(Mirror(packet->ip, packet->port));
