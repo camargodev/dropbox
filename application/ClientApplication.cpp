@@ -8,7 +8,6 @@
 
 #include "../include/ClientSocketWrapper.hpp"
 #include "../include/ServerSocketWrapper.hpp"
-#include "../include/ClientSyncWrapper.hpp"
 #include "../include/InputHandler.hpp"
 #include "../include/PacketHandler.hpp"
 #include "../include/Notifier.hpp"
