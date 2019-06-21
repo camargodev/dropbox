@@ -24,7 +24,6 @@ int myPort;
 
 int getServerPort(int argc, char *argv[]) {
 	int port = stoi(string(argv[1]));
-    printf("I will answer on port %i\n", port);
 	return port;
 }
 
@@ -382,30 +381,31 @@ void processLiveness() {
     pthread_create(&connectionThread, NULL, processLivenessOnNewThread, NULL);
 }
 
-void connectAsMirror(char *argv[]) {
+bool connectAsMirror(char *argv[]) {
     if (!clientSocket.setServer(string(argv[2]), stoi(string(argv[3])))) {
         printf("Error setting server\n");
-        return;
+        return false;
     }
     if (!clientSocket.connectToServer()) {
         printf("Error connecting to main server\n"); 
-        return;
+        return false;
     }
     if (!clientSocket.identifyAsMirror(stoi(string(argv[1])))) {
         printf("Error sending identification\n");
-        return;
+        return false;
     }
     printf("I will be a mirror of %s:%s\n", argv[2], argv[3]);
+    return true;
 }
 
 int main(int argc, char *argv[]) {
 
     myPort = getServerPort(argc, argv);
 	serverSocket.listenOnPort(myPort);
-    // sem_init(&waitingForElectionResults, 0, 1);
     
     if (isMirror(argc)) {
-        connectAsMirror(argv);
+        if (!connectAsMirror(argv)) 
+            return -1;
         replicationHelper.setAsBackupServer();
         fileHandler.configAsBackup();
     }
@@ -414,6 +414,8 @@ int main(int argc, char *argv[]) {
 		printf("Could not open socket. Try another port\n");
 		return -1;
 	}
+
+    printf("I will answer on port %i\n", myPort);
 
 	serverSocket.setNumberOfClients(5);
 	fileHandler.createDir();
