@@ -20,7 +20,7 @@ void ConnectionHandler :: addSocketToNewClient(const string& username, ClientInf
     ConnectedUser newClient(username);
     newClient.openConnections.push_back(clientInfo);
     connectedClients.push_back(newClient);
-    printf("New ip %s:%i connected for client %s\n", clientInfo.ip, clientInfo.portToConnect, username.c_str());
+    // printf("New ip %s:%i connected for client %s\n", clientInfo.ip, clientInfo.portToConnect, username.c_str());
     sem_post(&connecting);
 }
 
@@ -37,7 +37,7 @@ void ConnectionHandler :: addSocketToExistingClient(const string& username, Clie
                 sem_post(&connecting);
                 return;
             }
-            printf("New ip %s:%i connected for client %s\n", clientInfo.ip, clientInfo.portToConnect, username.c_str());
+            // printf("New ip %s:%i connected for client %s\n", clientInfo.ip, clientInfo.portToConnect, username.c_str());
             connectedClient.openConnections.push_back(clientInfo);
         }
     }

@@ -93,6 +93,7 @@ void handleReceivedPacket(Packet* packet) {
         case DELETE_ORDER: {
             string filepath = fileHandler.getFilepath(packet->filename);
             fileHandler.deleteFile(filepath.c_str());
+            printf("I deleted file %s\n", packet->filename);
             break;
         }
         case FILE_LISTING: {
@@ -192,10 +193,10 @@ void *handleNewServer(void* voidPort) {
             printf("Cannot set server\n");
         if (!clientSocket.connectToServer())
             printf("Cannot connect to server\n");
+        updatedServer = true;
         if (!clientSocket.identifyUsername(port, clientUsername))
             printf("Error identifying\n");
         // sem_post(&changingServer);
-        updatedServer = true;
     }
 }
 

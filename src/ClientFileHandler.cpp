@@ -12,11 +12,11 @@
 ClientFileHandler :: ClientFileHandler() {
     this->path = getenv("HOME");
     this->path = this->path + "/";
-    this->dirname = "sync_dir/";
+    this->dirname = "storage/sync_dir/";
 }
 
 void ClientFileHandler :: updateFolderNameForTesting(int port) {
-    this->dirname = "sync_dir_" + to_string(port) + "/";
+    this->dirname = "storage/sync_dir_" + to_string(port) + "/";
 }
 
 void ClientFileHandler :: printFileList(vector<FileForListing> fileList) {

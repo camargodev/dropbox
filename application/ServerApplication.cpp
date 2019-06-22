@@ -52,7 +52,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 	
     switch (packet->command) {
         case MIRROR: {
-            printf("I will send everything to my mirror on socket %i in %s:%i\n", socket, packet->ip, packet->port);
+            printf("I have mirror on socket %i (%s:%i)\n", socket, packet->ip, packet->port);
             Mirror mirror = Mirror(socket, packet->ip, packet->port);
             
             // send all existing mirror to the new; send the new to all existing
@@ -109,7 +109,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             for (auto mirror : replicationHelper.getMirrors()) {
                 serverSocket.sendPacketToClient(mirror.socket, packet);
                 if (packet->currentPartIndex == packet->numberOfParts) 
-                    printf("Copy %s to mirror %s:%i on socket %i\n", packet->filename, mirror.ip, mirror.port, mirror.socket);
+                    printf("Copy %s to MIRROR %s:%i on socket %i\n", packet->filename, mirror.ip, mirror.port, mirror.socket);
             }
             
             packet->command = FILE_SYNCED;
@@ -118,7 +118,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
                     continue;
                 serverSocket.sendPacketToClient(client.socket, packet);
                 if (packet->currentPartIndex == packet->numberOfParts) 
-                    printf("Copy %s to client %s:%i on socket %i\n", packet->filename, client.ip, client.portToConnect, client.socket);
+                    printf("Copy %s to CLIENT %s:%i on socket %i\n", packet->filename, client.ip, client.portToConnect, client.socket);
             }          
             
             break;
@@ -144,7 +144,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 		case DELETE_REQUISITION: {
             fileHandler.deleteFile(connectedClient.username.c_str(), packet->filename);
-
+            printf("I deleted file %s of client %s\n", packet->filename, connectedClient.username.c_str());
             if (replicationHelper.isMainServer()) {
                 Packet answer(DELETE_ORDER, packet->filename);
                 for (auto openConnection : connectedClient.openConnections) {
@@ -227,7 +227,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case COORDINATOR: {
-            printf("\nNEW COORDINATOR: %s:%i\n", packet->ip, packet->port);
+            printf("\n-- NEW COORDINATOR: %s:%i --\n", packet->ip, packet->port);
             clientSocket.closeSocket();
 
             if (!clientSocket.setServer(packet->ip, packet->port))
@@ -269,7 +269,7 @@ void *handleMainServerAnswers(void *dummy) {
 }
 
 void identifyAsCoordinator() {
-    printf("\nNEW COORDINATOR: me\n");
+    printf("\n-- I AM THE NEW COORDINATOR -- \n");
     ClientSocketWrapper miniClientSocket;
     for (auto mirror : replicationHelper.getMirrors()) {
         if (mirror.socket == -1) {
@@ -371,13 +371,13 @@ bool isMirror(int argc) {
 
 void processNewClientConnected() {
     pthread_t connectionThread;
-    sem_wait(&clientConnecting);
+    // sem_wait(&clientConnecting);
     Connection clientConnection = serverSocket.acceptClientConnection();
+    // sem_post(&clientConnecting);
     int descriptor = clientConnection.descriptor;
     if (descriptor < 0) 
         return;
     pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
-    sem_post(&clientConnecting);
 }
 
 void processMainServerAnswers() {
