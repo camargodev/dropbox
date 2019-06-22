@@ -190,8 +190,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             vector <FileForListing> filesOnUserDir = fileHandler.getFiles(connectedClient.username.c_str());
 
             printf("I will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
-            if (serverSocket.sendFileList(socket, filesOnUserDir))
-                printf("Sent with sucess!!!\n");
+            if (!serverSocket.sendFileList(socket, filesOnUserDir))
+                printf("Error sending file list.\n");
 
             break;
         }
@@ -292,7 +292,7 @@ void identifyAsCoordinator() {
             if (!miniClientSocket.connectToServer())
                 printf("Error connecting\n");
             miniClientSocket.identifyAsNewServer(serverSocket.getPort());
-            miniClientSocket.closeSocket();
+            // miniClientSocket.closeSocket();
         }
     }
 

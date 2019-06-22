@@ -22,7 +22,7 @@ char* clientUsername;
 Notifier notifier;
 InputHandler inputHandler;
 // sem_t changingServer;
-bool updatingServer = false;
+bool updatedServer = false;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
@@ -112,16 +112,16 @@ void handleReceivedPacket(Packet* packet) {
 
 void *handleServerAnswers(void* dummy) {
     while (true) {
-        if (updatingServer)
-            continue;
         // sem_wait(&changingServer);
-        printf("Waiting packet from clientSocket %i\n", clientSocket.getSocketDescriptor());
-        Packet* packet = clientSocket.receivePacketFromServer(1);
+        // printf("Waiting packet from clientSocket %i\n", clientSocket.getSocketDescriptor());
+        Packet* packet = clientSocket.receivePacketFromServer(3);
         // sem_post(&changingServer);
         if (packet != NULL) {
-            printf("Received Packet\n");
+            // printf("Received Packet\n");
             handleReceivedPacket(packet);
         } else {
+            updatedServer = false;
+            while (!updatedServer) {}
             // printf("Packet is null\n");
         }
     }
@@ -185,7 +185,6 @@ void *handleNewServer(void* voidPort) {
         Packet* packet = miniServerSocket.receivePacketFromClient(clientConnection.descriptor);
         if (packet == NULL)
             continue;
-        updatingServer = true;
         // sem_wait(&changingServer);
         printf("My new server will be %s:%i\n", packet->ip, packet->port);
         clientSocket.closeSocket();
@@ -196,7 +195,7 @@ void *handleNewServer(void* voidPort) {
         if (!clientSocket.identifyUsername(port, clientUsername))
             printf("Error identifying\n");
         // sem_post(&changingServer);
-        updatingServer = false;
+        updatedServer = true;
     }
 }
 
@@ -245,7 +244,7 @@ int main(int argc, char *argv[])
                 shouldExit = true;
                 break;
             case INPUT_UPLOAD: {
-                printf("I will upload on clientSocket %i\n", clientSocket.getSocketDescriptor());
+                // printf("I will upload on clientSocket %i\n", clientSocket.getSocketDescriptor());
                 WrappedFile file = fileHandler.getFile(input.args.fileToUpload);
                 string filepath = fileHandler.getFilepath(file.filename);
                 notifier.stopWatching();
@@ -274,7 +273,7 @@ int main(int argc, char *argv[])
                 break;
             }
             case INPUT_LIST_SERVER:
-                printf("I will ask from clientSocket %i\n", clientSocket.getSocketDescriptor());
+                // printf("I will ask from clientSocket %i\n", clientSocket.getSocketDescriptor());
                 clientSocket.askForFileList();
                 break;
             case INPUT_GET_SYNC_DIR:
