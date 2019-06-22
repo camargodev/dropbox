@@ -2,7 +2,21 @@
 
 To compile everything, run ```make```.
 
-In one terminal, run ```./server <port>```. It starts a server at ```localhost``` (127.0.0.1).
+##### To start a new server 
 
-In another terminal, run ```./client <username> localhost <port>```. On client, you can run commands like ```upload <filepath>``` to upload a file or ```exit``` to close the connection.
+Run ```./server <port>```. 
 
+##### To start a backup server 
+
+Run ```./server <port> <original_svr_ip> <original_svr_port```.
+
+##### To start a client
+
+Run ```./client <username> <server_ip> <server_port>``` or ```./client <username> <server_ip> <server_port> <access_port>```. The access port is the port that the client provides to external services for communication. This port is used solely by new elected server to inform the client who is the new coordinator. The default (if not provided) is 4020.
+
+
+#### Authors
+João Vitor de Camargo
+Bernardo Trevisan
+Lúcio Pereira
+Cristiano Salla
