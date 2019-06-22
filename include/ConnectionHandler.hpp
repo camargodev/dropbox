@@ -12,12 +12,14 @@
 struct ClientInfo {
     SocketDescriptor socket;
     char ip[INET_ADDRSTRLEN];
+    int portToConnect;
 
     ClientInfo() {}
 
-    ClientInfo(SocketDescriptor socket, char ip[INET_ADDRSTRLEN]) {
+    ClientInfo(SocketDescriptor socket, char ip[INET_ADDRSTRLEN], int portToConnect) {
         this->socket = socket;
         strcpy(this->ip, ip);
+        this->portToConnect = portToConnect;
     }
 };
 

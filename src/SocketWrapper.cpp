@@ -26,9 +26,11 @@ Packet* SocketWrapper :: receivePacket(int connectionDescriptor, int timeout) {
     while ((bytesToRead = packetSize - totalReadBytes) != 0) {
         alreadyReadBytes = read(connectionDescriptor, (packet + totalReadBytes), bytesToRead);
         totalReadBytes += alreadyReadBytes;
-
-        if(timeout > 0 && totalReadBytes == 0 && time(0) - start >= timeout) 
+        double timePassed = time(0) - start;
+        // printf("Time is %f; totalBytes is %i\n", timePassed, totalReadBytes);
+        if(timeout > 0 && totalReadBytes <= 0 &&  timePassed >= timeout) {
             return NULL;
+        }
     }
     return (Packet*) packet;
 }

@@ -2,7 +2,7 @@
 #include <iostream>
 
 void Notifier :: setDirectory(string dirName) {
-    cout << "I will watch directory " << dirName << endl;
+    printf("I will watch directory %s\n", dirName.c_str());
     this->dirName = dirName;
 }
 

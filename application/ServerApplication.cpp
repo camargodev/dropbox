@@ -20,11 +20,11 @@ ServerFileHandler fileHandler;
 ReplicationHelper replicationHelper;
 ElectionHelper electionHelper;
 AddressGetter addressGetter;
+sem_t clientConnecting;
 int myPort;
 
 int getServerPort(int argc, char *argv[]) {
 	int port = stoi(string(argv[1]));
-    printf("I will answer on port %i\n", port);
 	return port;
 }
 
@@ -52,7 +52,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 	
     switch (packet->command) {
         case MIRROR: {
-            printf("I will send everything to my mirror on socket %i in %s:%i\n", socket, packet->ip, packet->port);
+            printf("I have mirror on socket %i (%s:%i)\n", socket, packet->ip, packet->port);
             Mirror mirror = Mirror(socket, packet->ip, packet->port);
             
             // send all existing mirror to the new; send the new to all existing
@@ -84,37 +84,43 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             break;
 
 		case GET_SYNC_DIR: {
-            printf("Client %s requested sync dir\n", connectedClient.username.c_str());
+            // printf("Client %s requested sync dir\n", connectedClient.username.c_str());
             vector <FileForListing> filesOnUserDirectory = fileHandler.getFiles(connectedClient.username.c_str());
 
-            printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
+            // printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
             serverSocket.sendFileListForSyncDir(socket, filesOnUserDirectory);
 
             break;
         }
 
         case UPLOAD_FILE: {
-            printf("I received file %s (%i/%i)\n", packet->filename, packet->currentPartIndex, packet->numberOfParts);
+            // printf("I received file %s (%i/%i)\n", packet->filename, packet->currentPartIndex, packet->numberOfParts);
             if(packet->currentPartIndex == 1)
                 fileHandler.createFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
             else
                 fileHandler.appendFile(connectedClient.username.c_str(), packet->filename, packet->payload, packet->payloadSize);
 
-            if (replicationHelper.isMainServer()) {
-                if (packet->currentPartIndex == packet->numberOfParts) {
-                    WrappedFile file = fileHandler.getFile(connectedClient.username.c_str(), packet->filename);
-                    for (auto openConnection : connectedClient.openConnections) {
-                        if (!receivedFromTheCurrentOpenSocket(socket, openConnection.socket)) {
-                            printf("GOT FROM: %i! I will send to client %s on socket %i\n", socket, openConnection.ip, openConnection.socket);
-                            serverSocket.sendSyncFile(openConnection.socket, file);
-                        }
-                    }
-                }
-                for (auto mirror : replicationHelper.getMirrors()) {
-                    printf ("I will replicate to mirror %s:%i\n", mirror.ip, mirror.port);
-                    serverSocket.sendPacketToClient(mirror.socket, packet);
-                }
+            if (packet->currentPartIndex == packet->numberOfParts) 
+                printf("Received %s from %s on socket %i\n", packet->filename, connectedClient.username.c_str(), socket);
+
+            if (!replicationHelper.isMainServer()) 
+                break;         
+
+            for (auto mirror : replicationHelper.getMirrors()) {
+                serverSocket.sendPacketToClient(mirror.socket, packet);
+                if (packet->currentPartIndex == packet->numberOfParts) 
+                    printf("Copy %s to MIRROR %s:%i on socket %i\n", packet->filename, mirror.ip, mirror.port, mirror.socket);
             }
+            
+            packet->command = FILE_SYNCED;
+            for (auto client : connectedClient.openConnections) {
+                if (receivedFromTheCurrentOpenSocket(socket, client.socket)) 
+                    continue;
+                serverSocket.sendPacketToClient(client.socket, packet);
+                if (packet->currentPartIndex == packet->numberOfParts) 
+                    printf("Copy %s to CLIENT %s:%i on socket %i\n", packet->filename, client.ip, client.portToConnect, client.socket);
+            }          
+            
             break;
         }
 
@@ -138,7 +144,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 		case DELETE_REQUISITION: {
             fileHandler.deleteFile(connectedClient.username.c_str(), packet->filename);
-
+            printf("I deleted file %s of client %s\n", packet->filename, connectedClient.username.c_str());
             if (replicationHelper.isMainServer()) {
                 Packet answer(DELETE_ORDER, packet->filename);
                 for (auto openConnection : connectedClient.openConnections) {
@@ -152,23 +158,23 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
 		case IDENTIFICATION: {
-            printf("\nClient %s connected on socket %i with IP %s\n", packet->payload, socket, packet->ip);
+            printf("Client %s connected on socket %i with IP %s:%i\n", packet->payload, socket, packet->ip, packet->port);
 
             fileHandler.createClientDir(packet->payload);
-            connHandler.addSocketToClient(packet->payload, ClientInfo(socket, packet->ip));
+            connHandler.addSocketToClient(packet->payload, ClientInfo(socket, packet->ip, packet->port));
 
             if (replicationHelper.isMainServer()) {
                 // printf("I will send this identification to all my mirrors\n");
                 for (auto mirror : replicationHelper.getMirrors()) {
-                    if (serverSocket.sendPacketToClient(mirror.socket, packet))
-                        printf("Sent %s identification to mirror %s:%i\n", packet->payload, mirror.ip, mirror.port);                    
+                    if (!serverSocket.sendPacketToClient(mirror.socket, packet))
+                        printf("Error sending %s identification to mirror %s:%i\n", packet->payload, mirror.ip, mirror.port);                    
                 }
             }
             break;
         }
 
 		case DISCONNECT: {
-            printf("\nClient %s disconnected on socket %i\n", connectedClient.username.c_str(), socket);
+            printf("Client %s disconnected on socket %i\n", connectedClient.username.c_str(), socket);
 
             connHandler.removeSocketFromUser(connectedClient.username, socket);
             shouldKeepExecuting = false;
@@ -183,8 +189,9 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 		case LIST_REQUISITION: {
             vector <FileForListing> filesOnUserDir = fileHandler.getFiles(connectedClient.username.c_str());
 
-            printf("\nI will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
-            serverSocket.sendFileList(socket, filesOnUserDir);
+            printf("I will send %s's file list on socket %i\n", connectedClient.username.c_str(), socket);
+            if (!serverSocket.sendFileList(socket, filesOnUserDir))
+                printf("Error sending file list.\n");
 
             break;
         }
@@ -205,9 +212,9 @@ bool handleReceivedPacket(int socket, Packet* packet) {
             }
             // sem_post(&waitingForElectionResults);
             if (!miniClientSocket.setServer(packet->ip, packet->port))
-                printf("Error setting server\n");
+                printf("Election: Error setting server\n");
             if (!miniClientSocket.connectToServer())
-                printf("Error connecting\n");
+                printf("Election: Error connecting\n");
             miniClientSocket.sendElectionAnswer(Mirror(addressGetter.getIP(), myPort));
                 // printf("ANSWER TO %s:%i\n", packet->ip, packet->port);
             break;
@@ -220,13 +227,13 @@ bool handleReceivedPacket(int socket, Packet* packet) {
         }
 
         case COORDINATOR: {
-            printf("NEW COORDINATOR: %s:%i\n", packet->ip, packet->port);
+            printf("\n-- NEW COORDINATOR: %s:%i --\n", packet->ip, packet->port);
             clientSocket.closeSocket();
 
             if (!clientSocket.setServer(packet->ip, packet->port))
-                printf("Error setting server\n");
+                printf("Coord: Error setting server\n");
             if (!clientSocket.connectToServer())
-                printf("Error connecting\n");
+                printf("Coord: Error connecting\n");
             // clientSocket.sendMirrorForUpdate(myPort);
 
             replicationHelper.removeMirrorFromList(Mirror(packet->ip, packet->port));
@@ -262,19 +269,8 @@ void *handleMainServerAnswers(void *dummy) {
 }
 
 void identifyAsCoordinator() {
-    printf("NEW COORDINATOR: me\n");
+    printf("\n-- I AM THE NEW COORDINATOR -- \n");
     ClientSocketWrapper miniClientSocket;
-    for (auto user : connHandler.getAllConnectedUsers()) {
-        for (auto connection : user.openConnections) {
-            printf("Warning user %s: client %s:%i\n", user.username.c_str(), connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER);
-            if (!miniClientSocket.setServer(connection.ip, ReplicationHelper::PORT_TO_NEW_SERVER))
-                printf("Error setting server\n");
-            if (!miniClientSocket.connectToServer())
-                printf("Error connecting\n");
-            miniClientSocket.identifyAsNewServer(serverSocket.getPort());
-            miniClientSocket.closeSocket();
-        }
-    }
     for (auto mirror : replicationHelper.getMirrors()) {
         if (mirror.socket == -1) {
             // printf("COORD TO %s:%i\n", mirror.ip, mirror.port);
@@ -287,8 +283,20 @@ void identifyAsCoordinator() {
         miniClientSocket.identifyAsNewCoordinator(serverSocket.getPort());
         // miniClientSocket.closeSocket();
     }
-    // printf("Now everybody knows I'm the main server\n");
     replicationHelper.setAsMainServer();
+    for (auto user : connHandler.getAllConnectedUsers()) {
+        for (auto connection : user.openConnections) {
+            printf("Warning user %s: client %s:%i\n", user.username.c_str(), connection.ip, connection.portToConnect);
+            if (!miniClientSocket.setServer(connection.ip, connection.portToConnect))
+                printf("Error setting server\n");
+            if (!miniClientSocket.connectToServer())
+                printf("Error connecting\n");
+            miniClientSocket.identifyAsNewServer(serverSocket.getPort());
+            // miniClientSocket.closeSocket();
+        }
+    }
+
+    // printf("Now everybody knows I'm the main server\n");
 }
 
 void *checkForElectionAnswersOnNewThread(void *dummy) {
@@ -363,8 +371,9 @@ bool isMirror(int argc) {
 
 void processNewClientConnected() {
     pthread_t connectionThread;
-    // printf("Waiting for a new client to connect\n");
+    // sem_wait(&clientConnecting);
     Connection clientConnection = serverSocket.acceptClientConnection();
+    // sem_post(&clientConnecting);
     int descriptor = clientConnection.descriptor;
     if (descriptor < 0) 
         return;
@@ -382,38 +391,42 @@ void processLiveness() {
     pthread_create(&connectionThread, NULL, processLivenessOnNewThread, NULL);
 }
 
-void connectAsMirror(char *argv[]) {
+bool connectAsMirror(char *argv[]) {
     if (!clientSocket.setServer(string(argv[2]), stoi(string(argv[3])))) {
         printf("Error setting server\n");
-        return;
+        return false;
     }
     if (!clientSocket.connectToServer()) {
         printf("Error connecting to main server\n"); 
-        return;
+        return false;
     }
     if (!clientSocket.identifyAsMirror(stoi(string(argv[1])))) {
         printf("Error sending identification\n");
-        return;
+        return false;
     }
     printf("I will be a mirror of %s:%s\n", argv[2], argv[3]);
+    return true;
 }
 
 int main(int argc, char *argv[]) {
 
     myPort = getServerPort(argc, argv);
 	serverSocket.listenOnPort(myPort);
-    // sem_init(&waitingForElectionResults, 0, 1);
-    
+    sem_init(&clientConnecting, 0, 1);
+
     if (isMirror(argc)) {
-        connectAsMirror(argv);
+        if (!connectAsMirror(argv)) 
+            return -1;
         replicationHelper.setAsBackupServer();
-        fileHandler.configAsBackup();
+        fileHandler.configAsBackup(myPort);
     }
 
 	if (!serverSocket.openSocket()) {
 		printf("Could not open socket. Try another port\n");
 		return -1;
 	}
+
+    printf("I will answer on port %i\n", myPort);
 
 	serverSocket.setNumberOfClients(5);
 	fileHandler.createDir();

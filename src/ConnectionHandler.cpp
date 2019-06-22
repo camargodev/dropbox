@@ -20,25 +20,25 @@ void ConnectionHandler :: addSocketToNewClient(const string& username, ClientInf
     ConnectedUser newClient(username);
     newClient.openConnections.push_back(clientInfo);
     connectedClients.push_back(newClient);
+    // printf("New ip %s:%i connected for client %s\n", clientInfo.ip, clientInfo.portToConnect, username.c_str());
     sem_post(&connecting);
 }
 
 void ConnectionHandler :: addSocketToExistingClient(const string& username, ClientInfo clientInfo) {
     sem_wait(&connecting);
-    bool ipConnected = false;
     for (auto&& connectedClient : connectedClients) {
         if (username.compare(connectedClient.username) == 0) {
             for (auto&& connection : connectedClient.openConnections) {
-                if (strcmp(clientInfo.ip, connection.ip) == 0) {
-                    printf("Updating socket for client %s\n", username.c_str());
-                    connection.socket = clientInfo.socket;
-                    ipConnected = true;
-                }
+                if (strcmp(clientInfo.ip, connection.ip) != 0 || clientInfo.portToConnect != connection.portToConnect) 
+                    continue;
+
+                printf("Updating socket %i for user %s (%s:%i)\n", clientInfo.socket, username.c_str(), clientInfo.ip, clientInfo.portToConnect);
+                connection.socket = clientInfo.socket;
+                sem_post(&connecting);
+                return;
             }
-            if (!ipConnected) {
-                printf("New ip connected for client %s\n", username.c_str());
-                connectedClient.openConnections.push_back(clientInfo);
-            }
+            // printf("New ip %s:%i connected for client %s\n", clientInfo.ip, clientInfo.portToConnect, username.c_str());
+            connectedClient.openConnections.push_back(clientInfo);
         }
     }
     sem_post(&connecting);

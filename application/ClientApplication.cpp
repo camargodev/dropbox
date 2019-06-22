@@ -21,19 +21,35 @@ vector<string> filesBeingReceived;
 char* clientUsername;
 Notifier notifier;
 InputHandler inputHandler;
+// sem_t changingServer;
+bool updatedServer = false;
 
 ClientInput getServerToConnect(int argc, char *argv[]) {
     if (argc < 4) {
         printf("No hostname was supplied. Please connect with ./client <username> <server_ip> <server_port>\n");
         exit(EXIT_FAILURE);
     }
-    int port = SocketWrapper::DEFAULT_PORT;
-    if (argc == 4)
-        port = stoi(string(argv[3]));
-    return ClientInput(argv[1], argv[2], port);
+    int serverPort = SocketWrapper::DEFAULT_PORT;
+    int clientPort = ReplicationHelper::PORT_TO_NEW_SERVER;
+    if (argc >= 4)
+        serverPort = stoi(string(argv[3]));
+    if (argc == 5)
+        clientPort = stoi(string(argv[4]));
+    return ClientInput(argv[1], argv[2], serverPort, clientPort);
+}
+
+bool isValidCommand(Command command) {
+    return command == SYNC_FILE || command == DOWNLOADED_FILE
+        || command == FILE_SYNCED || command == SIMPLE_MESSAGE
+        || command == ERROR_MESSAGE || command == DELETE_ORDER
+        || command == FILE_LISTING;
 }
 
 void handleReceivedPacket(Packet* packet) {
+    if (!isValidCommand(packet->command)) {
+        printf("Packet with invalid command %i\n", packet->command);
+        return;
+    }
     switch (packet->command) {
         case SYNC_FILE:
             printf("I must download file %s\n", packet->filename);
@@ -77,6 +93,7 @@ void handleReceivedPacket(Packet* packet) {
         case DELETE_ORDER: {
             string filepath = fileHandler.getFilepath(packet->filename);
             fileHandler.deleteFile(filepath.c_str());
+            printf("I deleted file %s\n", packet->filename);
             break;
         }
         case FILE_LISTING: {
@@ -96,9 +113,18 @@ void handleReceivedPacket(Packet* packet) {
 
 void *handleServerAnswers(void* dummy) {
     while (true) {
+        // sem_wait(&changingServer);
+        // printf("Waiting packet from clientSocket %i\n", clientSocket.getSocketDescriptor());
         Packet* packet = clientSocket.receivePacketFromServer(3);
-        if (packet != NULL)
+        // sem_post(&changingServer);
+        if (packet != NULL) {
+            // printf("Received Packet\n");
             handleReceivedPacket(packet);
+        } else {
+            updatedServer = false;
+            while (!updatedServer) {}
+            // printf("Packet is null\n");
+        }
     }
 }
 
@@ -145,35 +171,39 @@ void *handleNotifyEvents(void* dummy) {
     }
 }
 
-void *handleNewServer(void* dummy) {
-    // printf("I will open a socket in port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
+void *handleNewServer(void* voidPort) {
+	int port = *(int*) voidPort;
+    printf("I will open a socket in port %i\n", port);
     ServerSocketWrapper miniServerSocket;
-    miniServerSocket.listenOnPort(ReplicationHelper::PORT_TO_NEW_SERVER);
+    miniServerSocket.listenOnPort(port);
     if (!miniServerSocket.openSocket())
         printf("Error openning socket\n");
     miniServerSocket.setNumberOfClients(1);
     while(true) {
-        // printf("I will wait for new servers on port %i\n", ReplicationHelper::PORT_TO_NEW_SERVER);
         Connection clientConnection = miniServerSocket.acceptClientConnection();
         if (clientConnection.descriptor < 0)
             continue;
         Packet* packet = miniServerSocket.receivePacketFromClient(clientConnection.descriptor);
         if (packet == NULL)
             continue;
+        // sem_wait(&changingServer);
         printf("My new server will be %s:%i\n", packet->ip, packet->port);
         clientSocket.closeSocket();
         if (!clientSocket.setServer(packet->ip, packet->port))
             printf("Cannot set server\n");
         if (!clientSocket.connectToServer())
             printf("Cannot connect to server\n");
-        if (!clientSocket.identifyUsername(clientUsername))
+        updatedServer = true;
+        if (!clientSocket.identifyUsername(port, clientUsername))
             printf("Error identifying\n");
+        // sem_post(&changingServer);
     }
 }
 
 int main(int argc, char *argv[])
 {
     ClientInput input = getServerToConnect(argc, argv);
+    // sem_init(&changingServer, 0, 1);
     
     if (!clientSocket.setServer(input.serverHostname, input.serverPort)) 
         return -1;
@@ -183,19 +213,22 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    if (!clientSocket.identifyUsername(input.username)) {
+    if (!clientSocket.identifyUsername(input.clientPort, input.username)) {
         printf("Could not send your username\n");
     }
 
     clientUsername = input.username;
     serverDescriptor = clientSocket.getSocketDescriptor();
 
+    fileHandler.updateFolderNameForTesting(input.clientPort); // REMOVE LATER
     fileHandler.createDir();
+
+    int clientPort = input.clientPort;
 
     pthread_t connectionThread, notifyThread, newServerThread;
     pthread_create(&connectionThread, NULL, handleServerAnswers, NULL);
     pthread_create(&notifyThread, NULL, handleNotifyEvents, NULL);
-    pthread_create(&newServerThread, NULL, handleNewServer, NULL);
+    pthread_create(&newServerThread, NULL, handleNewServer, &clientPort);
 
     clientSocket.getSyncDir();
 
@@ -212,6 +245,7 @@ int main(int argc, char *argv[])
                 shouldExit = true;
                 break;
             case INPUT_UPLOAD: {
+                // printf("I will upload on clientSocket %i\n", clientSocket.getSocketDescriptor());
                 WrappedFile file = fileHandler.getFile(input.args.fileToUpload);
                 string filepath = fileHandler.getFilepath(file.filename);
                 notifier.stopWatching();
@@ -240,6 +274,7 @@ int main(int argc, char *argv[])
                 break;
             }
             case INPUT_LIST_SERVER:
+                // printf("I will ask from clientSocket %i\n", clientSocket.getSocketDescriptor());
                 clientSocket.askForFileList();
                 break;
             case INPUT_GET_SYNC_DIR:

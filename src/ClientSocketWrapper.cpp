@@ -38,7 +38,7 @@ bool ClientSocketWrapper :: sendPacketToServer(Packet* packet) {
     return sendPacket(this->socketDescriptor, packet);
 }
 
-bool ClientSocketWrapper :: identifyUsername(char* username) {
+bool ClientSocketWrapper :: identifyUsername(int port, char* username) {
     Packet* packet = new Packet;
     packet->command = IDENTIFICATION;
     strcpy(packet->payload, username);
@@ -46,6 +46,7 @@ bool ClientSocketWrapper :: identifyUsername(char* username) {
     strcpy(packet->filename, "");
     packet->currentPartIndex = 1;
     packet->numberOfParts = 1;
+    packet->port = port;
     strcpy(packet->ip, this->addressGetter.getIP());
     return sendPacketToServer(packet);
 }

@@ -4,11 +4,11 @@
 // Public methods
 // ==========================================================================================================
 ServerFileHandler :: ServerFileHandler() : ClientFileHandler() {
-    this->dirname = "archive/";
+    this->dirname = "storage/archive_original/";
 }
 
-void ServerFileHandler :: configAsBackup() {
-    this->dirname = "backup_archive/";
+void ServerFileHandler :: configAsBackup(int port) {
+    this->dirname = "storage/archive_backup_" + to_string(port) + "/";
 }
 
 void ServerFileHandler :: createClientDir(const char* username) {
