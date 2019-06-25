@@ -45,7 +45,7 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 	string filenameToSave;
     ConnectedUser connectedClient = connHandler.getConnectedClientBySocket(socket);
 
-    printf("I received a packet from socket %i\n", socket);
+    // printf("I received a packet from socket %i\n", socket);
     
     if (!connectedClient.valid && messageRequiresUserAlreadyConnected(packet->command)) {
         printf("I need a user for command %i and could not find a valid one\n", packet->command);
@@ -250,8 +250,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 void *handleNewConnection(void *voidSocket) {
 	int socket = *(int*) voidSocket;
-    sem_post(&clientConnecting);
     printf("Handling connection on socket %i\n", socket);
+    sem_post(&clientConnecting);
 	bool shouldKeepExecuting = true;
 
     while(shouldKeepExecuting) {
