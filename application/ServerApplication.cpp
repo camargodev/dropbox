@@ -373,14 +373,14 @@ bool isMirror(int argc) {
 
 void processNewClientConnected() {
     pthread_t connectionThread;
-    // sem_wait(&clientConnecting);
+    sem_wait(&clientConnecting);
     Connection clientConnection = serverSocket.acceptClientConnection();
-    // sem_post(&clientConnecting);
     int descriptor = clientConnection.descriptor;
     if (descriptor < 0) 
         return;
     printf("Connection on socket %i\n", descriptor);
     pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
+    sem_post(&clientConnecting);
 }
 
 void processMainServerAnswers() {
