@@ -44,6 +44,8 @@ bool handleReceivedPacket(int socket, Packet* packet) {
     bool shouldKeepExecuting = true;
 	string filenameToSave;
     ConnectedUser connectedClient = connHandler.getConnectedClientBySocket(socket);
+
+    // printf("I received a packet from socket %i\n", socket);
     
     if (!connectedClient.valid && messageRequiresUserAlreadyConnected(packet->command)) {
         printf("I need a user for command %i and could not find a valid one\n", packet->command);
@@ -248,8 +250,10 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 void *handleNewConnection(void *voidSocket) {
 	int socket = *(int*) voidSocket;
-    // printf("Handling connection on socket %i\n", socket);
+    printf("Handling connection on socket %i\n", socket);
+    sem_post(&clientConnecting);
 	bool shouldKeepExecuting = true;
+
     while(shouldKeepExecuting) {
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
         if (packet != NULL)
@@ -371,13 +375,14 @@ bool isMirror(int argc) {
 
 void processNewClientConnected() {
     pthread_t connectionThread;
-    // sem_wait(&clientConnecting);
+    sem_wait(&clientConnecting);
     Connection clientConnection = serverSocket.acceptClientConnection();
-    // sem_post(&clientConnecting);
     int descriptor = clientConnection.descriptor;
     if (descriptor < 0) 
         return;
+    printf("Connection on socket %i\n", descriptor);
     pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
+    
 }
 
 void processMainServerAnswers() {
