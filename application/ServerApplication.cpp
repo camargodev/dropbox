@@ -250,8 +250,10 @@ bool handleReceivedPacket(int socket, Packet* packet) {
 
 void *handleNewConnection(void *voidSocket) {
 	int socket = *(int*) voidSocket;
+    sem_post(&clientConnecting);
     printf("Handling connection on socket %i\n", socket);
 	bool shouldKeepExecuting = true;
+
     while(shouldKeepExecuting) {
 		Packet* packet = serverSocket.receivePacketFromClient(socket);
         if (packet != NULL)
@@ -380,7 +382,7 @@ void processNewClientConnected() {
         return;
     printf("Connection on socket %i\n", descriptor);
     pthread_create(&connectionThread, NULL, handleNewConnection, &descriptor);
-    sem_post(&clientConnecting);
+    
 }
 
 void processMainServerAnswers() {
