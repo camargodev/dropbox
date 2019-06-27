@@ -16,7 +16,7 @@ Run ```./client <username> <server_ip> <server_port>``` or ```./client <username
 
 
 #### Authors
-João Vitor de Camargo
+João Vitor de Camargo 
 Bernardo Trevisan
 Lúcio Pereira
 Cristiano Salla
