@@ -16,7 +16,7 @@ ClientFileHandler :: ClientFileHandler() {
 }
 
 void ClientFileHandler :: updateFolderNameForTesting(int port) {
-    this->dirname = "sync_dir_" + to_string(port) + "/";
+    // this->dirname = "sync_dir_" + to_string(port) + "/";
 }
 
 void ClientFileHandler :: printFileList(vector<FileForListing> fileList) {
